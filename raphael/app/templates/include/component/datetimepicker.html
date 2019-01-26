@@ -1,0 +1,23 @@
+{% macro build(pickerid, selecttype='datetime', width='240px', placeholder='') -%}
+<script>
+$(document).ready(function() {
+    $('#{{ pickerid }}').datetimepicker({
+        weekStart: 0,
+        todayBtn:  1,
+        autoclose: 1,
+        todayHighlight: 1,
+        startView: 2,
+        forceParse: 0
+    }).on('changeDate', function(e) {
+        $('#{{ pickerid }}_utc').val($.mj_local2utc($('#{{ pickerid }}_local').val()));
+    });
+});
+</script>
+<div class="input-group date col-md-5" id="{{ pickerid }}" data-date-format="yyyy-mm-dd hh:ii:ss" data-link-field="{{ pickerid }}_local" data-link-format="yyyy-mm-dd hh:ii:ss" style="width: {{ width }};">
+    <input type="hidden" id="{{ pickerid }}_local" value="">
+    <input type="hidden" id="{{ pickerid }}_utc" value="">
+    <input class="form-control" id="{{ pickerid }}_text" size="16" type="text" value="" readonly placeholder="{{ placeholder }}"><br>
+    <span class="input-group-addon" onclick="$('#{{ pickerid }}').mj_setPicker('')"><span class="glyphicon glyphicon-remove"></span></span>
+    <span class="input-group-addon"><span class="glyphicon glyphicon-th"></span></span>
+</div>
+{%- endmacro %}

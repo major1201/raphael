@@ -1,0 +1,111 @@
+{% extends 'include/base.html' %}
+{% block title %}Setting Management{% endblock %}
+{% block head %}{{ super() }}
+<script>
+var settingTable_prop = {
+    url: "/setting/table",
+    width: "100%",
+    order_by: "name",
+    page_size: 15,
+    query_form: 'settingForm'
+};
+var settingTable_col = [
+    {"title": "Name", "prop": "name", "align": "left", width: '250px', "allow_sort": true},
+    {"title": "Value", "prop": "value", "align": "left", html_entities: true},
+    {"title": "Opt", "align": "left", "width": "150px", "js": "colOp"}
+];
+
+function colOp(o) {
+    var arr = [];
+    arr.push('<a href="javascript:void(0);" onclick="editSetting(\'' + o.id + '\')"><i class="fa fa-pencil"></i> Edit</a>');
+    arr.push('<a href="javascript:void(0);" onclick="removeSetting(\'' + o.id + '\')"><i class="fa fa-trash"></i> Remove</a>');
+    return arr.join("<b class='separator-line'>|</b>");
+}
+
+$(document).ready(function() {
+    $("#settingTable").mj_preloadTable();
+    queryForm();
+    $("#editSetting").mj_preloadDialog();
+    $("#editSetting").on('shown.bs.modal', function() {
+        $('#name').focus();
+    });
+});
+
+function addSetting() {
+    $("#id").val("");
+    $("#name").val("");
+    $("#value").val('');
+    $("#editSetting").mj_show("Create Item");
+}
+
+function saveSetting() {
+    if ($.isBlank($("#name").val())) {
+        $.mj_alert("Please specify name!", null, 'error');
+        return;
+    }
+    $("#editSettingForm").mj_submit('POST', "/setting/save", function(result) {
+        if (result != "success") {
+            $.mj_alert(result);
+        } else {
+            $('#editSetting').mj_hide();
+            queryForm();
+        }
+      });
+}
+
+function editSetting(id) {
+    $("#id").val(id);
+    $.mj_ajax('GET', "/setting/" + id, {}, function(result) {
+        result = JSON.parse(result);
+        if (result == null) {
+            $.mj_alert("Not exist!", null, 'error');
+        } else {
+            $("#name").val(result.name);
+            $("#value").val(result.value);
+            $("#editSetting").mj_show();
+        }
+    });
+}
+
+function removeSetting(id) {
+    $.mj_confirm("Confirm to remove this item?", function() {
+        $.mj_ajax('DELETE', "/setting/" + id, {}, function (result) {
+            queryForm();
+            $.mj_close();
+        });
+    });
+}
+
+function queryForm() {
+    $('#settingTable').mj_query();
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<form class="form-inline" id="settingForm" style="margin-bottom: 10px;">
+    <input type="text" class="form-control" id="qname" name="qname" placeholder="Name" onkeypress="return $.mj_keyEnter(event, queryForm)" style="width: 200px;">
+    <button type="button" class="btn btn-primary" onclick="queryForm();"><span class="glyphicon glyphicon-search"></span> Search</button>
+</form>
+{{ table.build('settingTable') }}
+<div id="settingTable_heading">
+    <button type="button" class="btn btn-primary" onclick="addSetting()">Create Item</button>
+</div>
+
+{{ dialog.build('editSetting', width='600px', title='Edit Item') }}
+<div id="editSetting_body">
+    <form id="editSettingForm">
+        <input type="hidden" id="id" name="id">
+        <dl class="dl-horizontal" style="margin-left: -80px;">
+            <dt>Name</dt>
+            <dd><input type="text" class="form-control" id="name" name="name" placeholder="Input Name"></dd>
+            <dt>Value</dt>
+            <dd><input type="text" class="form-control" id="value" name="value" placeholder="Input Value"></dd>
+        </dl>
+    </form>
+</div>
+<div id="editSetting_footer">
+    <button type="button" class="btn btn-primary" onclick="saveSetting()">Save</button>
+    <button type="button" class="btn btn-default" onclick="$('#editSetting').mj_hide();">Cancel</button>
+</div>
+{% endblock %}

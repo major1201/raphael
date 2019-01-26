@@ -1,0 +1,79 @@
+{% extends 'include/base.html' %}
+{% block title %}User Profile{% endblock %}
+{% block head %}{{ super() }}
+<script>
+$(document).ready(function() {
+    $("#modPwd").mj_preloadDialog();
+    if ("{{ msg }}" == 'failed') {
+        $.mj_alert('Failed');
+        return;
+    }
+    var user = JSON.parse('{{ user | safe }}');
+    $('#loginid').text(user.loginid);
+    $('#name').text(user.name);
+    $('#email').text(user.email);
+});
+
+function changePassword() {
+    $('#oldpwd').val('');
+    $('#newpwd').val('');
+    $('#newpwdconfirm').val('');
+    $("#modPwd").mj_show("Change Password");
+}
+
+function savePassword() {
+    var oldpwd = $('#oldpwd').val();
+    var newpwd = $('#newpwd').val();
+    var newpwdconfirm = $('#newpwdconfirm').val();
+    if ($.isBlank(oldpwd) || $.isBlank(newpwd)) {
+        $.mj_alert("Password can't be blank!", null, 'error');
+        return;
+    }
+    if (newpwd !== newpwdconfirm) {
+        $.mj_alert("New password is different!", null, 'error');
+        return;
+    }
+    if (oldpwd === newpwd) {
+        $.mj_alert("New password should be different from the old one.", null, 'error');
+        return;
+    }
+    $.mj_ajax('post', '/user/changepassword', {'oldpwd': oldpwd, 'newpwd': newpwd}, function(result) {
+        if (result === 'success') {
+            $.mj_alert('Success', null, 'success');
+            $('#modPwd').mj_hide();
+        } else {
+            $.mj_alert(result, null, 'error');
+        }
+    });
+}
+</script>
+{% endblock %}
+{% block content %}
+<dl class="dl-horizontal">
+    <dt>Login ID</dt>
+    <dd><span id="loginid"></span></dd>
+    <dt>Name</dt>
+    <dd><span id="name"></span></dd>
+    <dt>Password</dt>
+    <dd><button class="btn btn-primary" onclick="changePassword()">Change Password</button></dd>
+    <dt>Email</dt>
+    <dd><span id="email"></span></dd>
+</dl>
+{{ dialog.build('modPwd', width='500px') }}
+<div id="modPwd_body">
+    <form id="modPwdForm">
+        <dl class="dl-horizontal">
+            <dt>Old Password</dt>
+            <dd><input type="password" class="form-control" id="oldpwd" name="oldpwd"></dd>
+            <dt>New Password</dt>
+            <dd><input type="password" class="form-control" id="newpwd" name="newpwd"></dd>
+            <dt>Confirm Password</dt>
+            <dd><input type="password" class="form-control" id="newpwdconfirm" name="newpwdconfirm"></dd>
+        </dl>
+    </form>
+</div>
+<div id="modPwd_footer" style="display: none;">
+    <button type="button" class="btn btn-primary" onclick="savePassword()">Save</button>
+    <button type="button" class="btn btn-default" onclick="$('#modPwd').mj_hide();">Cancel</button>
+</div>
+{% endblock %}

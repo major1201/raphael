@@ -1,0 +1,270 @@
+{% extends 'include/base.html' %}
+{% block title %}Menu Management{% endblock %}
+{% block head %}{{ super() }}
+<style>
+.dl-horizontal dt, dd {margin: 10px;}
+</style>
+<script>
+var menuTable_prop = {
+    "url": "/menu/table",
+    width: "100%",
+    "order_by": "sort",
+    "page_size": 15,
+    "query_form": "menuForm"
+};
+var menuTable_col = [
+    {title: "Name", prop: "name", js:'colName', align: "left", width: "150px", allow_sort: true},
+    {title: "Mark", prop: "mark", width: "100px", align: "left", allow_sort: true, allow_tag: true},
+    {title: "URL", prop: "url", align: "left", allow_sort: true, js: "colUrl"},
+    {title: "target", prop: "target", width: "70px", allow_sort: true},
+    {title: "Sort", prop: "sort", align: "right", width: "50px", allow_sort: true},
+    {title: "Icon", prop: "icon", align: "left", width: "120px", allow_sort: true, allow_tag: true},
+    {title: "Move", width: "200px", js: "colMove"},
+    {title: "Opt.", align: "left", width: "260px", js: "colOp"}
+];
+
+var menuAuthTable_prop = {
+    "url": "/menu/auth",
+    "query_form": "menuAuthForm",
+    width: "100%",
+    "striped": false,
+    "order_by": "loginid"
+};
+var menuAuthTable_col = [
+    {title: "Login ID", prop: "loginid", align: "left", width: "30%", allow_sort: true},
+    {title: "Name", prop: "name", align: "left", width: "40%", allow_sort: true},
+    {title: "Opt.", align: "left", width: "30%", js: "colUserJs"}
+];
+
+function colName(row) {
+    if (row.type == 0) {
+        return row.name;
+    } else {
+        return '<a href="javascript:void(0);" onclick="queryMenu(\'' + row.id + '\', \'' + row.name + '\')"><i class="fa fa-folder"></i> ' + row.name + '</a>';
+    }
+}
+
+function colUrl(o) {
+    return o.url ? '<a href="' + o.url + '">' + o.url + '</a>' : '';
+}
+
+function colMove(o) {
+    var arr = [];
+    arr.push('<a href="javascript:void(0);" onclick="move(\'' + o.id + '\', \'top\')">Top</a>');
+    arr.push('<a href="javascript:void(0);" onclick="move(\'' + o.id + '\', \'up\')">Up</a>');
+    arr.push('<a href="javascript:void(0);" onclick="move(\'' + o.id + '\', \'down\')">Down</a>');
+    arr.push('<a href="javascript:void(0);" onclick="move(\'' + o.id + '\', \'bottom\')">Bottom</a>');
+    return arr.join('<b class="separator-line">|</b>');
+}
+
+function colOp(o) {
+    var arr = [];
+    arr.push('<a href="javascript:void(0);" onclick="editMenu(\'' + o.id + '\')"><i class="fa fa-pencil"></i> Edit</a>');
+    arr.push('<a href="javascript:void(0);" onclick="deleteMenu(\'' + o.id + '\')"><i class="fa fa-times"></i> Remove</a>');
+    arr.push('<a href="javascript:void(0);" onclick="openAuth(\'' + o.id + '\')"><i class="fa fa-users"></i> Authentication</a>');
+    return arr.join('<b class="separator-line">|</b>');
+}
+
+function move(id, operator) {
+    $.mj_ajax('POST', '/menu/' + id + '/move/' + operator, {}, function(result) {
+        if (result == 'success') {
+            $('#menuTable').mj_query();
+        } else {
+            $('#menuTable').mj_query();
+            $.mj_alert(result);
+        }
+    });
+}
+
+$(document).ready(function() {
+    $('#qparentid').val('');
+    $("#menuTable").mj_preloadTable();
+    $("#menuTable").mj_query();
+    $("#editMenu").mj_preloadDialog();
+    $("#menuAuthTable").mj_preloadTable();
+    $("#menuAuth").mj_preloadDialog();
+});
+
+function addMenu(type) {
+    var dialogTitle = '';
+    $('#type').val(type);
+    $("#id").val("");
+    $("#name").val("");
+    $("#namelabel").hide();
+    $("#url").val("");
+    $("#target").val("_self");
+    if (type === 0) {
+        $('#url').attr('disabled', null);
+        $('#target').attr('disabled', null);
+        dialogTitle = 'New Menu';
+    } else {
+        $('#url').attr('disabled', '');
+        $('#target').attr('disabled', '');
+        dialogTitle = 'New Directory';
+    }
+    $('#parentid').val($('#qparentid').val());
+    $('#icon').val('');
+    $('#mark').val('');
+    $("#editMenu").mj_show(dialogTitle);
+}
+
+function queryMenu(parentid, menuName) {
+    if ($.isBlank(parentid)) {
+        $('#newDirButton').show();
+        $('#menuName').text('');
+    } else {
+        $('#newDirButton').hide();
+        $('#menuName').text(menuName);
+    }
+    $('#qparentid').val(parentid);
+    $('#menuTable').mj_query();
+}
+
+function saveMenu() {
+    if ($.isBlank($("#name").val())) {
+        checkInput($("#name"), $("#namelabel"));
+        $.mj_alert("Save failed!", null, 'error');
+        return;
+    }
+    $("#editMenuForm").mj_submit('POST', "/menu/save", function(result) {
+        if (result != "success") {
+            $.mj_alert(result, null, 'success');
+        } else {
+            $.mj_alert("Successful!", null, 'success');
+            $('#editMenu').mj_hide();
+            $("#menuTable").mj_query();
+        }
+    });
+}
+
+function editMenu(id) {
+    $("#id").val(id);
+    $("#namelabel").hide();
+    $.mj_ajax('POST', "/menu/get", {id: id}, function(result) {
+        if (result == null) {
+            $.mj_alert("Menu not found!");
+        } else {
+            result = $.parseJSON(result);
+            $("#name").val(result.name);
+            $('#type').val(result.type);
+            $("#url").val(result.url);
+            $("#target").val(result.target);
+            if (result.type == 0) {
+                $('#url').attr('disabled', null);
+                $('#target').attr('disabled', null);
+            } else {
+                $('#url').attr('disabled', '');
+                $('#target').attr('disabled', '');
+            }
+            $('#parentid').val(result.parentid);
+            $('#icon').val(result.icon);
+            $('#mark').val(result.mark);
+            $("#editMenu").mj_show("Edit Menu");
+        }
+    });
+}
+
+function deleteMenu(id) {
+    $.mj_confirm("Confirm the remove the menu (and all the children)？", function() {
+        $.mj_ajax('POST', "/menu/delete", {id: id}, function (result) {
+            $("#menuTable").mj_query();
+            $.mj_alert("Successful!");
+        });
+    });
+}
+
+function openAuth(id) {
+    $("#menuid").val(id);
+    $("#menuAuth").mj_show();
+    $("#menuAuthTable").mj_query();
+}
+
+function colUserJs(o) {
+    if ($.isBlank(o.authid)) {
+        return "<a href=\"javascript:void(0);\" onclick='setUserMenuAuth(\"" + o.id + "\",1)'>Grant</a>";
+    } else {
+        return "<a href=\"javascript:void(0);\" onclick='setUserMenuAuth(\"" + o.id + "\",2)'>Revoke</a>";
+    }
+}
+
+function setUserMenuAuth(userId, type) {
+    $.mj_ajax('POST', "/menu/setauth", {menuId:$("#menuid").val(),userId:userId,type:type}, function(result) {
+        if (result != "success") {
+            $.mj_alert(result);
+        } else {
+            $("#menuAuthTable").mj_query($("#menuAuthTable").mj_currentPage());
+        }
+    });
+}
+
+function checkInput(checkObj, showObj) {
+  if ($.isBlank($(checkObj).val())) {
+    $(showObj).show();
+  } else {
+    $(showObj).hide();
+  }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<form id="menuForm" style="display: none;">
+    <input type="hidden" id="qparentid" name="qparentid" value="">
+</form>
+{{ table.build('menuTable') }}
+<div id="menuTable_heading">
+    <button type="button" class="btn btn-default" onclick="queryMenu('');"><i class="fa fa-arrow-left"></i> <span id="menuName"></span></button>
+    <button id="newDirButton" type="button" class="btn btn-success" onclick="addMenu(1)"><i class="fa fa-plus"></i> New Directory</button>
+    <button type="button" class="btn btn-success" onclick="addMenu(0)"><i class="fa fa-plus"></i> New Menu</button>
+</div>
+
+{{ dialog.build('editMenu', width='400px') }}
+<div id="editMenu_body">
+    <form id="editMenuForm">
+        <input type="hidden" id="id" name="id">
+        <input type="hidden" id="type" name="type">
+        <input type="hidden" id="parentid" name="parentid">
+        <dl class="dl-horizontal" style="margin-left: -80px;">
+            <dt>Name<em>*</em></dt>
+            <dd>
+                <input type="text" class="form-control" id="name" name="name"
+                       placeholder="Input Name" onblur="checkInput(this,$('#namelabel'))">
+                <span id="namelabel" class="label label-danger" style="display: none;">Name can't be blank!<br/></span>
+            </dd>
+            <dt>URL</dt>
+            <dd>
+                <input type="text" class="form-control" id="url" name="url" placeholder="URL should start with '/'">
+            </dd>
+            <dt>Target<em>*</em></dt>
+            <dd>
+                <label class="sr-only" for="target">select:</label>
+                <select id="target" class="form-control">
+                    <option value="_self">_self (default)</option>
+                    <option value="_blank">_blank</option>
+                    <option value="_parent">_parent</option>
+                    <option value="_top">_top</option>
+                </select>
+            </dd>
+            <dt>Icon</dt>
+            <dd><input type="text" class="form-control" id="icon" name="icon"></dd>
+            <dt>Mark</dt>
+            <dd><input type="text" class="form-control" id="mark" name="mark"></dd>
+        </dl>
+    </form>
+</div>
+<div id="editMenu_footer">
+    <button type="button" class="btn btn-primary" onclick="saveMenu()">Save</button>
+    <button type="button" class="btn btn-default" onclick="$('#editMenu').mj_hide();">Close</button>
+</div>
+
+{{ dialog.build('menuAuth', width='500px', title="Menu Authentication") }}
+<div id="menuAuth_body">
+    <form id="menuAuthForm">
+      <input type="hidden" name="menuid" id="menuid">
+    </form>
+    {{ table.build('menuAuthTable') }}
+</div>
+<div id="menuAuth_footer">
+    <button type="button" class="btn btn-default" onclick="$('#menuAuth').mj_hide();">Close</button>
+</div>
+{% endblock %}

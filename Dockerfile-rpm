@@ -1,0 +1,18 @@
+FROM centos:7
+LABEL name="raphael" \
+    description="raphael image" \
+    create-date="20181022" \
+    modify-date="20181022"
+
+RUN mkdir /opt/raphael
+WORKDIR /opt/raphael
+ADD . .
+RUN yum install -y epel-release \
+&& yum install -y yum-utils rpmdevtools make python34-crypto gcc \
+&& yum-builddep -y scripts/raphael.spec \
+&& make && make rpm
+
+# the raphael rpm package would appear in /opt/raphael/dist
+# docker cp raphael-rpm:/opt/raphael/dist/* .
+
+CMD ["/bin/bash"]

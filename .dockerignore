@@ -1,0 +1,10 @@
+venv
+build
+dist
+raphael/app/static/demo/inspinia/
+.idea/
+*.pid
+.DS_Store
+*.pyc
+*.pyo
+*.pyd

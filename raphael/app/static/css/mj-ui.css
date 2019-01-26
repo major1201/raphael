@@ -1,0 +1,35 @@
+b.separator-line {font-weight: lighter; margin: 0 5px}
+
+.table thead th {text-align: center;}
+table.fixed {table-layout: fixed;}
+
+.ft-pf {overflow: hidden;}
+.ft-l {float:left;padding-top:6px;font-size: small;}
+.ft-r {float:right;font-size: small;}
+
+a.footer-beian:link {text-decoration:none; color:#333;}
+a.footer-beian:visited {text-decoration:none; color:#333;}
+a.footer-beian:hover {text-decoration:underline; color:#333;}
+a.footer-beian:active {text-decoration:underline; color:#333;}
+
+.caret-up {
+width: 0;
+height: 0;
+border-left: 4px solid rgba(0, 0, 0, 0);
+border-right: 4px solid rgba(0, 0, 0, 0);
+border-bottom: 4px solid;
+display: inline-block;
+margin-left: 2px;
+vertical-align: middle;
+}
+
+em {color: red;font-weight: bold;}
+
+.container-all {width: 1270px !important; padding-top:55px; overflow: hidden;}
+.container-left {width: 250px; border-right: #ccc 1px solid; float: left;}
+.container-right {width: 990px; float: left; border-left: #ccc 1px solid; margin-left: -1px; padding-left: 20px;overflow-x: auto;}
+
+.multi-line {width: 100%;word-break: break-all; display:block; white-space: pre-wrap; overflow: hidden;}
+textarea.code-textarea {width: 100%;font-family: Consolas,monospace;font-size: small;}
+
+dl.dl-horizontal dt, dd {padding: 10px 0;}

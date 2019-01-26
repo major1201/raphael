@@ -1,0 +1,121 @@
+{% extends 'include/base.html' %}
+{% block title %}Openldap - 命令组管理{% endblock %}
+{% block head %}{{ super() }}
+<script>
+var command_groups_table_prop = {
+    url: "{{ url_for('.command_groups_table') }}",
+    width: "100%",
+    order_by: "id"
+};
+var command_groups_table_col = [
+    {title: "命令组", prop: "cn", align: "left", width: "200px"},
+    {title: "成员", prop: "uniqueMember", align: "left", width: "auto", js: 'colUniqueMember', wrap: true},
+    {title: "操作", align: "left", width: "150px", js: "colOp"}
+];
+
+function colUniqueMember(row) {
+    var arr = [];
+    $.each(row.uniqueMember.sort(), function(i, o) {
+        arr.push('<span class="label label-default">' + o + '</span>');
+    });
+    return arr.join('&nbsp;');
+}
+
+function colOp(o) {
+    var editLink = '<a href="javascript:void(0)" onclick="editCommandGroup(\'' + o.cn + '\')"><i class="fa fa-pencil"></i> 编辑</a>';
+    var deleteLink = '<a href="javascript:void(0)" style="color: red;" onclick="deleteCommandGroup(\'' + o.cn + '\')"><i class="fa fa-trash"></i> 删除</a>';
+    return [editLink, deleteLink].join('<b class="separator-line">|</b>');
+}
+
+function addCommandGroup() {
+    $('#cn').val('');
+    $('#edit_command_group_dialog').mj_show();
+}
+
+function editCommandGroup(cn) {
+    location.href = '{{ url_for(".command_groups_page") }}/edit/' + encodeURIComponent(cn);
+}
+
+function save() {
+    if ($.isBlank($("#cn").val())) {
+        checkInput($("#cn"), $("#cnlabel"));
+        $.mj_alert("Please check again!", null, 'error');
+        return;
+    }
+    $('#editCommandGroupForm').mj_submit('POST', '{{ url_for(".command_groups_save") }}', function(result) {
+        if (result === 'success') {
+            $.mj_alert('保存成功！', function() {
+                $.mj_close();
+                $('#edit_command_group_dialog').mj_hide();
+                $('#command_groups_table').mj_query();
+            }, 'success');
+        } else {
+            $.mj_alert('保存失败！', $.mj_close, 'error');
+        }
+    });
+}
+
+function deleteCommandGroup(cn) {
+    $.mj_confirm("确定删除命令组 " + cn + "？", function() {
+        $.mj_ajax('DELETE', "{{ url_for('.command_groups_page') }}/" + encodeURIComponent(cn), {}, function(result) {
+            if (result === 'success') {
+                $.mj_close();
+                $("#command_groups_table").mj_query();
+            } else {
+                $.mj_alert(result, null, 'error');
+            }
+        });
+    });
+}
+
+function checkInput(checkObj, showObj) {
+    if ($.isBlank($(checkObj).val())) {
+        $(showObj).show();
+    } else {
+        $(showObj).hide();
+    }
+}
+
+$(document).ready(function() {
+    $('#command_groups_table').mj_preloadTable();
+    $('#edit_command_group_dialog').mj_preloadDialog();
+    $('#command_groups_table').mj_query();
+    $('#commands_tab_link').on('show.bs.tab', function(e) {
+        location.href = "{{ url_for('.commands_page') }}";
+    });
+});
+</script>
+{% endblock %}
+{% block content %}
+<ul class="nav nav-tabs tabs">
+    <li><a href="#commands_tab" id="commands_tab_link" data-toggle="tab">命令</a></li>
+    <li class="active"><a href="#command_groups_tab" id="command_groups_tab_link" data-toggle="tab">命令组</a></li>
+</ul>
+<div class="tab-content">
+    <div class="tab-pane in" id="commands_tab"></div>
+    <div class="tab-pane in active" id="command_groups_tab">
+        {{ table.build('command_groups_table', allow_paging='false') }}
+        <div id="command_groups_table_heading">
+            <button type="button" class="btn btn-primary" onclick="addCommandGroup()"><i class="fa fa-plus"></i> 新建命令组</button>
+        </div>
+    </div>
+</div>
+
+{{ dialog.build('edit_command_group_dialog', '新建命令组', '600px') }}
+<div id="edit_command_group_dialog_body">
+    <form id="editCommandGroupForm">
+        <input type="hidden" id="opt" name="opt" value="NEW">
+        <dl class="dl-horizontal">
+            <dt>名称:<em>*</em></dt>
+            <dd>
+                <input type="text" class="form-control has-error" id="cn" name="cn" onblur="checkInput(this,$('#cnlabel'))" maxlength="80" style="width: 300px;">
+                <span id="cnlabel" class="label label-danger" style="display: none;">Cannot be blank<br/></span><br/>
+            </dd>
+        </dl>
+    </form>
+</div>
+<div id="edit_command_group_dialog_footer">
+    <button type="button" class="btn btn-primary" onclick="save()">Save</button>
+    <button type="button" class="btn btn-default" onclick="$('#edit_command_group_dialog').mj_hide();">Cancel</button>
+</div>
+{% endblock %}

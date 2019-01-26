@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+{% block head -%}
+{% include 'include/head.html' %}
+<title>{{ displaytitle }}</title>
+{%- endblock %}
+</head>
+<body>
+<div class="container gray-bg">
+{% block content %}{% endblock %}
+</div>
+</body>
+</html>

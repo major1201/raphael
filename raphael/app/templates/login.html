@@ -1,0 +1,92 @@
+{% extends 'include/basenotree.html' %}
+
+{% block title %}登录{% endblock %}
+{% block head %}
+{{ super() }}
+<style>
+i.fa {font-size: 18pt;}
+.inner-addon {
+position: relative;
+}
+.inner-addon .fa {
+position: absolute;
+padding: 11px 15px;
+pointer-events: none;
+}
+.left-addon .fa {left:0;}
+.right-addon .fa {right:0;}
+</style>
+<script>
+$(document).ready(function() {
+    $("#signInBtn").hide();
+});
+
+function login() {
+    var $errmsg = $("#err-msg");
+    var $password = $("#password");
+    if ($.isBlank($("#username").val())) {
+        $errmsg.html("请输入用户名");
+        $errmsg.show();
+        return;
+    }
+    if ($.isBlank($password.val())) {
+        $errmsg.html("请输入密码");
+        $errmsg.show();
+        return;
+    }
+    var btn = $("#signInButton");
+    $(btn).addClass("disabled");
+    $(btn).attr("disabled", "disabled");
+    $(btn).html("登录中...");
+    $('#loginForm').mj_submit('POST', 'login/login', function(result) {
+        if (result === "success") {
+                window.location.href = decodeURI("{{ sourceurl }}");
+            } else {
+                if (result === "failed") {
+                  $password.val("");
+                  $("#captcha").val("");
+                  $('#otp').val('');
+                  $errmsg.html("密码，用户名或验证码错误");
+                  $password.focus();
+                }
+                $errmsg.show();
+                $(btn).html("登录");
+                $(btn).removeAttr("disabled");
+                $(btn).removeClass("disabled");
+            }
+    });
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="jumbotron" style="height: 425px;">
+    <div style="float: left;">
+        <h1>欢迎登录！</h1>
+    </div>
+    <div style="width: 100%;float: right;max-width: 300px;">
+        <form id="loginForm">
+            <h3>请登录</h3>
+            <span id="err-msg" style="color: red;display: none;"></span>
+            <div class="inner-addon left-addon input-group-lg">
+                <i class="fa fa-user"></i>
+                <input type="text" class="form-control" placeholder="用户名" id="username" name="username" required {{ 'autofocus' if username == '' else ''}} value="{{ username }}" style="padding-left: 48px; margin-bottom: 15px;">
+            </div>
+            <div class="inner-addon left-addon input-group-lg">
+                <i class="fa fa-lock"></i>
+                <input type="password" class="form-control" placeholder="密码" id="password" name="password" required {{ 'autofocus' if username != '' else ''}} onkeypress="return $.mj_keyEnter(event, login)"  style="padding-left: 48px; margin-bottom: 15px;">
+            </div>
+{% if otpenabled %}
+            <div class="inner-addon left-addon input-group-lg">
+                <i class="fa fa-vcard"></i>
+                <input type="text" class="form-control" placeholder="One-time Password" id="otp" name="otp" required onkeypress="return $.mj_keyEnter(event, login)" style="padding-left: 48px; margin-bottom: 15px;">
+            </div>
+{% endif %}
+            <div class="checkbox">
+                <label><input id="remember" name="remember" value="true" type="checkbox" {{ 'checked' if username != '' else '' }}> 记住账号</label>
+            </div>
+            <button id="signInButton" type="button" class="btn btn-lg btn-primary btn-block" onclick="login()">登录</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

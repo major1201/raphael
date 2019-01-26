@@ -1,0 +1,109 @@
+{% extends 'include/base.html' %}
+{% block title %}Openldap - 用户管理{% endblock %}
+{% block head %}{{ super() }}
+<script>
+var groupMap = {'100': 'users'};
+
+var users_table_prop = {
+    url: "{{ url_for('.users_table') }}",
+    width: "100%",
+    order_by: "id"
+};
+var users_table_col = [
+    {title: "用户", prop: "cn", align: "left", width: "120px"},
+    {title: "UID", prop: "uidNumber", align: "right", width: "60px"},
+    {title: "组", prop: "gidNumber", align: "left", width: "120px", js: "colGroup"},
+    {title: "Gecos", prop: "gecos", align: "left", width: "150px"},
+    {title: "显示名", prop: "displayName", align: "left", width: "120px"},
+    {title: "Email", prop: "mail", align: "left"},
+    {title: "上次修改密码日期", prop: "shadowLastChange", width: "150px", js: "colLastChange"},
+    {title: "操作", align: "left", width: "200px", js: "userColOp"}
+];
+
+function colLastChange(o) {
+    var d = new Date();
+    d.setUTCFullYear(1970, 0, 1);
+    d.setUTCDate(d.getUTCDate() + Number(o.shadowLastChange));
+    {#return '' + d.getUTCFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDay();#}
+    return d.getUTCFullYear() + '-' + $.mj_pad(d.getUTCMonth() + 1, 2) + '-' + $.mj_pad(d.getUTCDate(), 2)
+}
+
+function userColOp(o) {
+    var resetPasswdLink = '<a href="javascript:void(0)" onclick="resetPassword(\'' + o.cn + '\')"><i class="fa fa-key"></i> 重置密码</a>';
+    var editLink = '<a href="javascript:void(0)" onclick="editUser(\'' + o.cn + '\')"><i class="fa fa-pencil"></i> 编辑</a>';
+    var deleteLink = '<a href="javascript:void(0)" style="color: red;" onclick="deleteUser(\'' + o.cn + '\')"><i class="fa fa-trash"></i> 删除</a>';
+    return [resetPasswdLink, editLink, deleteLink].join('<b class="separator-line">|</b>');
+}
+
+function colGroup(o) {
+    var group = groupMap[o.gidNumber];
+    if ($.isBlank(group)) {
+        return '<span style="color: red">' + o.gidNumber + '</span>';
+    } else {
+        return '<span title="' + o.gidNumber + '">' + group + '</span>';
+    }
+}
+
+function addUser() {
+    location.href = '{{ url_for(".users_new") }}'
+}
+
+function resetPassword(cn) {
+    $.mj_confirm("确定重置 " + cn + " 密码？", function() {
+        $.mj_ajax('UPDATE', "{{ url_for('.users_page') }}/rstpwd/" + encodeURIComponent(cn), {}, function(result) {
+            result = JSON.parse(result);
+            if (result.success === true) {
+                $.mj_alert('重置成功，新密码为: ' + result.new_password, $.mj_close, 'success');
+            } else {
+                $.mj_alert('密码重置失败', $.mj_close, 'error');
+            }
+        });
+    });
+}
+
+function editUser(cn) {
+    location.href = '{{ url_for(".users_page") }}/edit/' + encodeURIComponent(cn);
+}
+
+function deleteUser(cn) {
+    $.mj_confirm("确定删除 " + cn + "？", function() {
+        $.mj_ajax('DELETE', "{{ url_for('.users_page') }}/" + encodeURIComponent(cn), {}, function(result) {
+            if (result === 'success') {
+                $.mj_close();
+                $("#users_table").mj_query();
+            } else {
+                $.mj_alert(result, null, 'error');
+            }
+        });
+    });
+}
+
+$(document).ready(function() {
+    var groupArr = JSON.parse('{{ groups | tojson }}');
+    $.each(groupArr, function(i, o) {
+        groupMap[o['gidNumber']] = o['cn'];
+    });
+
+    $('#users_table').mj_preloadTable();
+    $('#users_table').mj_query();
+    $('#groups_tab_link').on('show.bs.tab', function(e) {
+        location.href = "{{ url_for('.groups_page') }}";
+    });
+});
+</script>
+{% endblock %}
+{% block content %}
+<ul class="nav nav-tabs tabs">
+    <li class="active"><a href="#users_tab" id="users_tab_link" data-toggle="tab">用户</a></li>
+    <li><a href="#groups_tab" id="groups_tab_link" data-toggle="tab">组</a></li>
+</ul>
+<div class="tab-content">
+    <div class="tab-pane in active" id="users_tab">
+        {{ table.build('users_table', allow_paging='false') }}
+        <div id="users_table_heading">
+            <button type="button" class="btn btn-primary" onclick="addUser()"><i class="fa fa-plus"></i> 新增用户</button>
+        </div>
+    </div>
+    <div class="tab-pane in" id="groups_tab"></div>
+</div>
+{% endblock %}

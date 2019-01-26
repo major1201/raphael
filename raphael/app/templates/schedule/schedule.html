@@ -1,0 +1,267 @@
+{% extends 'include/base.html' %}
+{% block title %}Schedule{% endblock %}
+{% block head %}{{ super() }}
+<style>
+.dl-horizontal dt, dd {margin: 10px;}
+.text-number {width: 70px!important;text-align: right;}
+</style>
+<script>
+var current_tab = 1;
+var scheduleTable_prop = {
+    "url": "/schedule/table",
+    "width": "100%",
+    "order_by": "id",
+    "page_size": 15,
+    "query_form": "schedule_query_form"
+};
+var scheduleTable_col = [
+    {title: "", prop: "enabled", js: "colEnabled", width: "30px", allow_sort: true},
+    {title: "", prop: "type", js: "colType", width: "30px", allow_sort: true},
+    {title: "ID", prop: "id", width: "60px", align: "left", allow_tag: true},
+    {title: "Data", prop: "data", js: "colData", width: "auto", align: "left", allow_sort: true, allow_tag: true},
+    {title: "Start Time", prop: "starttime", width: "140px", allow_sort: true, is_utc: true},
+    {title: "End Time", prop: "endtime", width: "140px", allow_sort: true, is_utc: true},
+    {title: "Next Run", prop: "next_run", width: "140px", allow_sort: true, allow_tag: true, is_utc: true},
+    {title: "Module", prop: "module", width: "100px", align: "left", allow_sort: true, allow_tag: true},
+    {title: "Function", prop: "func", width: "auto", align: "left", allow_sort: true, allow_tag: true},
+    {title: "Opt.", width: "70px", js: "getOpt"}
+];
+
+function colEnabled(o) {
+    if (o.enabled == 1) {
+        return o.active ? '<i class="fa fa-check" style="color: green;" title="Enabled"></i>' : '<i class="fa fa-warning" style="color: orange;" title="Not in job list"></i>';
+    } else {
+        return '<i class="fa fa-ban" style="color: red;" title="Disabled"></i>';
+    }
+}
+
+function colType(o) {
+    switch (o.type) {
+        case 1: return '<i class="fa fa-calendar" aria-hidden="true" title="Date"></i>';
+        case 2: return '<i class="fa fa-clock-o" aria-hidden="true" title="Interval"></i>';
+        case 3: return '<i class="fa fa-code" aria-hidden="true" title="Cron"></i>';
+        default: return '<i class="fa fa-exclamation" aria-hidden="true" style="color: red;" title="Error"></i>';
+    }
+}
+
+function colData(o) {
+    return o.type == 1 ? $.mj_utc2local(o.data) : o.data;
+}
+
+function getOpt(o) {
+    var arr = [];
+    arr.push('<a href="javascript:void(0);" title="Edit" onclick="editSchedule(\'' + o.id + '\')"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></a>');
+    arr.push('<a href="/schedule/log/' + o.id + '" title="Show History"><i class="fa fa-history" aria-hidden="true"></i></a>');
+    arr.push('<a href="javascript:void(0);" title="Remove" style="color: red;" onclick="deleteSchedule(\'' + o.id + '\')"><i class="fa fa-times" aria-hidden="true"></i></a></td>');
+    return arr.join('&nbsp;');
+}
+
+function activateTab(tab) {
+    $('.nav-tabs a[href="#' + tab + '"]').tab('show');
+}
+
+function deleteSchedule(id) {
+    $.mj_confirm("Are you sure to remove this record?", function() {
+        $.mj_ajax('POST', "/schedule/delete", {id: id}, function (result) {
+            $.mj_close();
+            $("#scheduleTable").mj_query();
+        });
+    });
+}
+
+function clearForm() {
+    $('#oid').val('');
+    activateTab('datetab');
+    $('#func').val('');
+    $('#module').val('');
+    $('#maxinstance').val('5');
+    mj.checkbox.setVal('enabled', '1');
+    // date
+    $('#data_date').mj_setPicker('');
+    // interval
+    $('#interval_weeks').val('');
+    $('#interval_days').val('');
+    $('#interval_hours').val('');
+    $('#interval_minutes').val('');
+    $('#interval_seconds').val('');
+    $('#interval_start').mj_setPicker('');
+    $('#interval_end').mj_setPicker('');
+    // cron
+    $('#cron_second').val('');
+    $('#cron_minute').val('');
+    $('#cron_hour').val('');
+    $('#cron_day').val('');
+    $('#cron_month').val('');
+    $('#cron_day_of_week').val('');
+    $('#cron_year').val('');
+    $('#cron_start').mj_setPicker('');
+    $('#cron_end').mj_setPicker('');
+}
+
+function addSchedule() {
+    $('#editSchedule').mj_show('Add Schedule');
+    clearForm();
+}
+
+function editSchedule(oid) {
+    $.mj_ajax('POST', '/schedule/get', {id: oid}, function(result) {
+        // clear form
+        clearForm();
+        result = JSON.parse(result);
+        $('#oid').val(result.id);
+        $('#func').val(result.func);
+        $('#maxinstance').val(result.maxinstance);
+        $('#module').val(result.module);
+        mj.checkbox.setVal('enabled', result.enabled == 1 ? '1' : '');
+        $('#editSchedule').mj_show('Edit Schedule');
+        switch (result.type) {
+            case 1: // date
+                activateTab('datetab');
+                $('#data_date').mj_setPicker($.mj_utc2local(result.data));
+                break;
+            case 2: // interval
+                activateTab('intervaltab');
+                var interval = JSON.parse(result.data);
+                $('#interval_weeks').val(interval.weeks);
+                $('#interval_days').val(interval.days);
+                $('#interval_hours').val(interval.hours);
+                $('#interval_minutes').val(interval.minutes);
+                $('#interval_seconds').val(interval.seconds);
+                $('#interval_start').mj_setPicker($.mj_utc2local(result.starttime));
+                $('#interval_end').mj_setPicker($.mj_utc2local(result.endtime));
+                break;
+            case 3: // cron
+                activateTab('crontab');
+                var cron = JSON.parse(result.data);
+                $('#cron_second').val(cron.second);
+                $('#cron_minute').val(cron.minute);
+                $('#cron_hour').val(cron.hour);
+                $('#cron_day').val(cron.day);
+                $('#cron_month').val(cron.month);
+                $('#cron_day_of_week').val(cron.day_of_week);
+                $('#cron_year').val(cron.year);
+                $('#cron_start').mj_setPicker($.mj_utc2local(result.starttime));
+                $('#cron_end').mj_setPicker($.mj_utc2local(result.endtime));
+                break;
+        }
+    });
+}
+
+function saveSchedule() {
+    $('#scheduletype').val(current_tab);
+    $('#scheduleForm').mj_submit('POST', '/schedule/save', function(result) {
+        if (result == 'success') {
+            $('#editSchedule').mj_hide();
+            $('#scheduleTable').mj_query();
+        } else {
+            $.mj_alert(result);
+        }
+    });
+}
+
+$(document).ready(function() {
+    $("#scheduleTable").mj_preloadTable();
+    $("#scheduleTable").mj_query();
+    $('#editSchedule').mj_preloadDialog();
+    $("#datetabhref").on("show.bs.tab", function(e) {current_tab = 1});
+    $("#intervaltabhref").on("show.bs.tab", function(e) {current_tab = 2});
+    $("#crontabhref").on("show.bs.tab", function(e) {current_tab = 3});
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<form id="schedule_query_form" class="form-inline">
+    <select title="Type" class="form-control" id="type" name="type">
+        <option value="">--Type--</option>
+        <option value="1">Date</option>
+        <option value="2">interval</option>
+        <option value="3">Cron</option>
+    </select>
+    <input type="text" class="form-control" id="modulelike" name="modulelike" placeholder="Module">
+    <button type="button" class="btn btn-primary" onclick="$('#scheduleTable').mj_query();"><span class="glyphicon glyphicon-search"></span> Search</button>
+</form><br>
+{{ table.build('scheduleTable') }}
+<div id="scheduleTable_heading">
+    <button type="button" class="btn btn-success" onclick="addSchedule()"><span class="glyphicon glyphicon-plus"></span> Add Schedule</button>
+</div>
+
+{{ dialog.build('editSchedule', width='700px', title="Edit Schedule") }}
+<div id="editSchedule_body">
+    <form id="scheduleForm">
+        <input type="hidden" id="oid" name="oid">
+        <input type="hidden" id="scheduletype" name="scheduletype">
+        <div class="form-inline">
+            <dl class="dl-horizontal">
+                <dt>Function<em>*</em>:</dt>
+                <dd><input type="text" class="form-control" id="func" name="func" style="width: 450px;" placeholder="e.g. webapp.modules.lotto.tasks:check_latest"></dd>
+                <dt>Module:</dt>
+                <dd><input type="text" class="form-control" id="module" name="module" style="width: 200px;" placeholder="e.g. system"></dd>
+                <dt>Max Instance:</dt>
+                <dd>
+                    <select class="form-control" id="maxinstance" name="maxinstance">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                </dd>
+                <dt>Enabled:</dt>
+                <dd><input type="checkbox" class="form-control" id="enabled" name="enabled" value="1" checked></dd>
+            </dl>
+        </div>
+        <hr>
+        <ul class="nav nav-tabs">
+            <li class="active"><a href="#datetab" id="datetabhref" data-toggle="tab">Date</a></li>
+            <li><a href="#intervaltab" id="intervaltabhref" data-toggle="tab">Interval</a></li>
+            <li><a href="#crontab" id="crontabhref" data-toggle="tab">Cron</a></li>
+        </ul>
+        <div class="tab-content" style="margin-bottom: 10px;">
+            <br>
+            <div class="tab-pane fade in active" id="datetab">
+                {{ datetimepicker.build('data_date') }}
+            </div>
+            <div class="tab-pane fade in" id="intervaltab">
+                <div class="form-inline">
+                    Run every
+                    <input type="text" class="form-control text-number" id="interval_weeks" placeholder="Weeks">
+                    <input type="text" class="form-control text-number" id="interval_days" placeholder="Days">
+                    <input type="text" class="form-control text-number" id="interval_hours" placeholder="Hours">
+                    <input type="text" class="form-control text-number" id="interval_minutes" placeholder="Minutes">
+                    <input type="text" class="form-control text-number" id="interval_seconds" placeholder="Seconds">
+                </div>
+                <br>
+                <div class="form-inline">
+                    Start time: {{ datetimepicker.build('interval_start') }}
+                    End time: {{ datetimepicker.build('interval_end') }}
+                </div>
+            </div>
+            <div class="tab-pane fade in" id="crontab">
+                <div class="form-inline">
+                    Cron Exp.
+                    <input type="text" class="form-control text-number" id="cron_second" placeholder="Second">
+                    <input type="text" class="form-control text-number" id="cron_minute" placeholder="Minute">
+                    <input type="text" class="form-control text-number" id="cron_hour" placeholder="Hour">
+                    <input type="text" class="form-control text-number" id="cron_day" placeholder="Day of month">
+                    <input type="text" class="form-control text-number" id="cron_month" placeholder="Month">
+                    <input type="text" class="form-control text-number" id="cron_day_of_week" placeholder="Day of week">
+                    <input type="text" class="form-control text-number" id="cron_year" placeholder="Year">
+                </div>
+                <br>
+                <div class="form-inline">
+                    Start time: {{ datetimepicker.build('cron_start') }}
+                    End time: {{ datetimepicker.build('cron_end') }}
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div id="editSchedule_footer">
+    <button type="button" class="btn btn-primary" onclick="saveSchedule()">Save</button>
+    <button type="button" class="btn btn-default" onclick="$('#editSchedule').mj_hide()">Cancel</button>
+</div>
+{% endblock %}

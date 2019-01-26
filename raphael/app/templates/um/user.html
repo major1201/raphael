@@ -1,0 +1,167 @@
+{% extends 'include/base.html' %}
+{% block title %}User Management{% endblock %}
+{% block head %}{{ super() }}
+<script>
+var user_table_prop = {
+    url: "{{ url_for('user.table') }}",
+    width: "100%",
+    order_by: "id",
+    page_size: 15
+};
+var user_table_col = [
+    {title: "Login ID", prop: "loginid", align: "left", width: "120px", allow_sort: true},
+    {title: "Name", prop: "name", align: "left", width: "150px", allow_sort: true},
+    {title: "Email", prop: "email", align: "left", allow_sort: true},
+    {title: "OTP Secret", prop: "otpsecret", js: 'colOtpsecret', width: '200px'},
+    {title: "Opt", align: "left", width: "150px", js: "colOp"}
+];
+$(document).ready(function() {
+    $("#user_table").mj_preloadTable();
+    $("#user_table").mj_query();
+    $("#editUser").mj_preloadDialog();
+    $('#otpQrcodeDialog').mj_preloadDialog();
+});
+
+function addUser() {
+  $("#inid").val("");
+  $("#inloginid").val("");
+  $("#loginidlabel").hide();
+  $("#inname").val("");
+  $("#namelabel").hide();
+  $("#inpassword").val("");
+  $('#email').val('');
+  $("#editUser").mj_show("Add User");
+}
+
+function saveUser() {
+  if ($.isBlank($("#inloginid").val()) || $.isBlank($("#inname").val())) {
+    checkInput($("#inloginid"), $("#loginidlabel"));
+    checkInput($("#inname"), $("#namelabel"));
+    $.mj_alert("Save failed!");
+    return;
+  }
+  $("#editUserForm").mj_submit('POST', "{{ url_for('user.save') }}", function(result) {
+    if (result != "success") {
+      $.mj_alert(result);
+    } else {
+      $.mj_alert("Save success!");
+      $('#editUser').mj_hide();
+      $("#user_table").mj_query();
+    }
+  });
+}
+
+function editUser(id) {
+    $("#inid").val(id);
+    $("#loginidlabel").hide();
+    $("#namelabel").hide();
+    $("#inpassword").val("");
+    $.mj_ajax('POST', "{{ url_for('user.get') }}", {id: id}, function(result) {
+        if (result == "failed") {
+            $.mj_alert("The user doesn't exist!");
+        } else {
+            result = $.parseJSON(result);
+            $("#inloginid").val(result.loginid);
+            $("#inname").val(result.name);
+            $('#email').val(result.email);
+            $("#editUser").mj_show();
+        }
+    });
+}
+
+function deleteUser(id) {
+    $.mj_confirm("Confirm to remove the user?", function() {
+        $.mj_ajax('POST', "{{ url_for('user.delete') }}", {id: id}, function (result) {
+            $("#user_table").mj_query();
+            $.mj_alert("Success!");
+        });
+    });
+}
+
+function regenerateOtpSecret(userid) {
+    $.mj_confirm('Regenerate OTP Secret?', function() {
+        $.mj_ajax('POST', '/user/otp/regensecret', {userid: userid}, function(result) {
+            if (result === 'success') {
+                $.mj_close();
+                $('#user_table').mj_query();
+            } else {
+                $.mj_alert(result, $.mj_close, 'error');
+            }
+        });
+    });
+}
+
+function showOtpQrcode(userid) {
+    $('#otpQrcodeImg').attr('src', '/user/otp/qrcode?userid=' + userid + '&r=' + Math.random());
+    $('#otpQrcodeDialog').mj_show();
+}
+
+function colOtpsecret(o) {
+    var arr = [
+        $.trim2empty(o.otpsecret),
+        '<a href="javascript:void(0);" onclick="regenerateOtpSecret(\'' + o.id + '\')"><i class="fa fa-refresh" style="color: green;"></i></a>'
+    ];
+    if ($.isNotBlank(o.otpsecret)) {
+        arr.push('<a href="javascript:void(0);" onclick="showOtpQrcode(\'' + o.id + '\')"><i class="fa fa-qrcode fa-lg" style="color: black;"></i></a>')
+    }
+    return arr.join('&nbsp;');
+}
+
+function colOp(o) {
+    var arr = [
+        '<a href="javascript:void(0);" onclick="editUser(\'' + o.id + '\')"><i class="fa fa-pencil"></i> Edit</a>',
+        '<a href="javascript:void(0);" onclick="deleteUser(\'' + o.id + '\')"><i class="fa fa-trash"></i> Remove</a></td>'
+    ];
+    return arr.join('<b class="separator-line">|</b>');
+}
+
+function checkInput(checkObj, showObj) {
+  if ($.isBlank($(checkObj).val())) {
+    $(showObj).show();
+  } else {
+    $(showObj).hide();
+  }
+}
+</script>
+{% endblock %}
+{% block content %}
+{{ table.build('user_table') }}
+<div id="user_table_heading">
+    <button type="button" class="btn btn-primary" onclick="addUser()"><i class="fa fa-plus"></i> Add User</button>
+</div>
+
+{{ dialog.build('editUser', width='400px') }}
+<div id="editUser_body">
+    <form id="editUserForm">
+        <input type="hidden" id="inid" name="inid">
+        <dl class="dl-horizontal" style="margin-left: -80px;">
+            <dt>Login ID<em>*</em></dt>
+            <dd>
+                <input type="text" class="form-control has-error" id="inloginid" name="inloginid" onblur="checkInput(this,$('#loginidlabel'))">
+                <span id="loginidlabel" class="label label-danger" style="display: none;">Login ID can't be blank</span>
+            </dd>
+            <dt>Name<em>*</em></dt>
+            <dd>
+                <input type="text" class="form-control" id="inname" name="inname" onblur="checkInput(this,$('#namelabel'))">
+                <span id="namelabel" class="label label-danger" style="display: none;">Name can't be blank</span>
+            </dd>
+            <dt>Password</dt>
+            <dd><input type="text" class="form-control" id="inpassword" name="inpassword"></dd>
+            <dt>Email</dt>
+            <dd><input type="text" class="form-control" id="email" name="email"></dd>
+        </dl>
+    </form>
+</div>
+<div id="editUser_footer" style="display: none;">
+    <button type="button" class="btn btn-primary" onclick="saveUser()">Save</button>
+    <button type="button" class="btn btn-default" onclick="$('#editUser').mj_hide();">Close</button>
+</div>
+
+{{ dialog.build('otpQrcodeDialog', width='360px', title='QR Code') }}
+<div id="otpQrcodeDialog_body">
+    <img src="" id="otpQrcodeImg" width="300px" height="300px">
+</div>
+<div id="otpQrcodeDialog_footer">
+    <button type="button" class="btn btn-default" onclick="$('#otpQrcodeDialog').mj_hide();">Close</button>
+</div>
+{% endblock %}

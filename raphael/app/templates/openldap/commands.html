@@ -1,0 +1,138 @@
+{% extends 'include/base.html' %}
+{% block title %}Openldap - 命令管理{% endblock %}
+{% block head %}{{ super() }}
+<script>
+var commands_table_prop = {
+    url: "{{ url_for('.commands_table') }}",
+    width: "100%",
+    order_by: "id"
+};
+var commands_table_col = [
+    {title: "名称", prop: "cn", align: "left", width: "200px"},
+    {title: "命令", prop: "sudoCommand", align: "left", width: "auto"},
+    {title: "命令组", prop: "groups", align: "left", width: "300px", js: 'colGroups'},
+    {title: "操作", align: "left", width: "150px", js: "colOp"}
+];
+
+function colGroups(row) {
+    var arr = [];
+    $.each(row.groups.sort(), function(i, o) {
+        arr.push('<span class="label label-default">' + o + '</span>');
+    });
+    return arr.join('&nbsp;');
+}
+
+function colOp(o) {
+    var editLink = '<a href="javascript:void(0)" onclick="editCommand(\'' + o.cn + '\')"><i class="fa fa-pencil"></i> 编辑</a>';
+    var deleteLink = '<a href="javascript:void(0)" style="color: red;" onclick="deleteCommand(\'' + o.cn + '\')"><i class="fa fa-trash"></i> 删除</a>';
+    return [editLink, deleteLink].join('<b class="separator-line">|</b>');
+}
+
+function addCommand() {
+    $('#type').val('NEW');
+    $('#cn').val('');
+    $('#cn').prop('readonly', false);
+    $('#commands').val('');
+    $('#edit_command_dialog').mj_show('新增命令');
+}
+
+function editCommand(cn) {
+    $.mj_ajax('GET', '{{ url_for(".commands_page") }}/' + encodeURIComponent(cn), {}, function(result) {
+        result = JSON.parse(result);
+        if (result === null) {
+            $.mj_alert('命令不存在！', $.mj_close, 'error');
+            return;
+        }
+        $('#type').val('EDIT');
+        $('#cn').val(cn);
+        $('#cn').prop('readonly', true);
+        $('#commands').val(result.sudoCommand.join('\n'));
+        $('#edit_command_dialog').mj_show('编辑命令');
+    });
+}
+
+function saveCommand() {
+    if ($.isBlank($('#cn').val())) {
+        checkInput($('#cn'), $('#cnlabel'));
+        $.mj_alert('名称不能为空！', $.mj_close, 'error');
+        return;
+    }
+    $('#editCommandForm').mj_submit('POST', '{{ url_for(".commands_save") }}', function(result) {
+        if (result === 'success') {
+            $.mj_alert('保存成功！', function() {
+                $.mj_close();
+                $('#edit_command_dialog').mj_hide();
+                $('#commands_table').mj_query();
+            }, 'success');
+        } else {
+            $.mj_alert(result, $.mj_close, 'error');
+        }
+    });
+}
+
+function deleteCommand(cn) {
+    $.mj_confirm("确定删除命令 " + cn + "？", function() {
+        $.mj_ajax('DELETE', "{{ url_for('.commands_page') }}/" + encodeURIComponent(cn), {}, function(result) {
+            if (result === 'success') {
+                $.mj_close();
+                $("#commands_table").mj_query();
+            } else {
+                $.mj_alert(result, null, 'error');
+            }
+        });
+    });
+}
+
+function checkInput(checkObj, showObj) {
+    if ($.isBlank($(checkObj).val())) {
+        $(showObj).show();
+    } else {
+        $(showObj).hide();
+    }
+}
+
+$(document).ready(function() {
+    $('#commands_table').mj_preloadTable();
+    $('#edit_command_dialog').mj_preloadDialog();
+    $('#commands_table').mj_query();
+    $('#command_groups_tab_link').on('show.bs.tab', function(e) {
+        location.href = "{{ url_for('.command_groups_page') }}";
+    });
+});
+</script>
+{% endblock %}
+{% block content %}
+<ul class="nav nav-tabs tabs">
+    <li class="active"><a href="#commands_tab" id="commands_tab_link" data-toggle="tab">命令</a></li>
+    <li><a href="#command_groups_tab" id="command_groups_tab_link" data-toggle="tab">命令组</a></li>
+</ul>
+<div class="tab-content">
+    <div class="tab-pane in active" id="commands_tab">
+        {{ table.build('commands_table', allow_paging='false') }}
+        <div id="commands_table_heading">
+            <button type="button" class="btn btn-primary" onclick="addCommand()"><i class="fa fa-plus"></i> 新增命令</button>
+        </div>
+    </div>
+    <div class="tab-pane in" id="command_groups_tab"></div>
+</div>
+
+{{ dialog.build('edit_command_dialog', '编辑命令', '600px') }}
+<div id="edit_command_dialog_body">
+    <form id="editCommandForm">
+        <input type="hidden" id="type" name="type" value="">
+        <div class="form-group">
+            <label for="cn">名称(cn) <em>*</em></label>
+            <input type="text" class="form-control has-error" id="cn" name="cn" maxlength="80" onblur="checkInput(this,$('#cnlabel'))">
+            <span id="cnlabel" class="label label-danger" style="display: none;">Cannot be blank<br/></span><br/>
+        </div>
+        <div class="form-group">
+            <label for="commands">命令 <em>*</em> <span style="font-style: italic">(多个命令以换行分隔，原则上放同类命令)</span></label>
+            <textarea class="form-control" id="commands" name="commands" rows="15"></textarea>
+        </div>
+    </form>
+</div>
+<div id="edit_command_dialog_footer">
+    <button type="button" class="btn btn-primary" onclick="saveCommand()">Save</button>
+    <button type="button" class="btn btn-default" onclick="$('#edit_command_dialog').mj_hide();">Cancel</button>
+</div>
+{% endblock %}

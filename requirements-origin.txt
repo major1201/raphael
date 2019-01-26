@@ -1,0 +1,11 @@
+future
+six
+pyyaml
+requests
+pymysql
+sqlalchemy
+pycrypto
+flask
+python-memcached
+apscheduler
+ldap3

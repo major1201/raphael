@@ -1,0 +1,6 @@
+include MANIFEST.in
+graft raphael
+graft docs
+graft scripts
+global-exclude __pycache__
+global-exclude *.py[co]

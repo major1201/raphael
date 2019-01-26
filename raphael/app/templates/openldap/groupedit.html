@@ -1,0 +1,71 @@
+{% extends 'include/base.html' %}
+{% block title %}Openldap - 编辑用户组{% endblock %}
+{% block head %}{{ super() }}
+<script>
+function getBack() {
+    location.href = "{{ url_for('openldap.groups_page') }}";
+}
+
+function toSubmit() {
+    if ($.isBlank($("#cn").val()) || $.isBlank($("#gid").val())) {
+        checkInput($("#cn"), $("#cnlabel"));
+        checkInput($("#gid"), $("#gidlabel"));
+        $.mj_alert("Please check again!", null, 'error');
+        return;
+    }
+    $.mj_confirm("Confirm to submit?", function() {
+        $("#editGroupFrom").mj_submit('POST', "{{ url_for('openldap.groups_save') }}", function(result) {
+            result = JSON.parse(result);
+            if (result.success !== true) {
+                $.mj_alert(result.error_msg, null, 'error');
+            } else {
+                $.mj_alert("Saved successfully!", getBack, 'success');
+            }
+        });
+    });
+}
+
+function toCancel() {
+    $.mj_confirm("Confirm to cancel?", getBack);
+}
+
+function checkInput(checkObj, showObj) {
+    if ($.isBlank($(checkObj).val())) {
+        $(showObj).show();
+    } else {
+        $(showObj).hide();
+    }
+}
+
+$(document).ready(function() {
+    if ("{{ opt }}" === "EDIT") {
+        if ("{{ dn | default('error') }}" === "error") {
+            $.mj_alert('用户组不存在！', getBack, 'error');
+        }
+    }
+});
+</script>
+{% endblock %}
+{% block content %}
+<form id="editGroupFrom">
+    <input type="hidden" id="dn" name="dn" value="{{ dn | default('') }}">
+    <div class="tab-pane in active">
+        <div class="panel panel-default" style="padding: 20px 30px 0 0;">
+            <dl class="dl-horizontal">
+                <dt>Common Name(cn)<em>*</em>:</dt>
+                <dd>
+                    <input type="text" class="form-control has-error" id="cn" name="cn" value="{{ cn | default('') }}" maxlength="80" onblur="checkInput(this,$('#cnlabel'))" style="width: 300px;" placeholder="e.g. group1" {{ "disabled" if opt == "EDIT" }}>
+                    <span id="cnlabel" class="label label-danger" style="display: none;">Cannot be blank<br/></span><br/>
+                </dd>
+                <dt>GID<em>*</em>:</dt>
+                <dd>
+                    <input type="number" class="form-control has-error" id="gid" name="gid" value="{{ gidNumber | default('') }}" maxlength="80" onblur="checkInput(this,$('#gidlabel'))" style="width: 300px;" placeholder="e.g. 1001">
+                    <span id="gidlabel" class="label label-danger" style="display: none;">Cannot be blank<br/></span><br/>
+                </dd>
+            </dl>
+        </div>
+    </div>
+</form>
+<button type="button" class="btn btn-primary" onclick="toSubmit()">Submit</button>
+<button type="button" class="btn btn-default" onclick="toCancel()">Cancel</button>
+{% endblock %}

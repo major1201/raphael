@@ -1,0 +1,66 @@
+{% extends 'include/base.html' %}
+{% block title %}Openldap - 用户组管理{% endblock %}
+{% block head %}{{ super() }}
+<script>
+var groups_table_prop = {
+    url: "{{ url_for('.groups_table') }}",
+    width: "100%",
+    order_by: "id"
+};
+var groups_table_col = [
+    {title: "用户组", prop: "cn", align: "left", width: "120px"},
+    {title: "GID", prop: "gidNumber", align: "right", width: "60px"},
+    {title: "操作", align: "left", width: "auto", js: "groupColOp"}
+];
+
+function groupColOp(o) {
+    var editLink = '<a href="javascript:void(0)" onclick="editGroup(\'' + o.cn + '\')"><i class="fa fa-pencil"></i> 编辑</a>';
+    var deleteLink = '<a href="javascript:void(0)" style="color: red;" onclick="deleteGroup(\'' + o.cn + '\')"><i class="fa fa-trash"></i> 删除</a>';
+    return [editLink, deleteLink].join('<b class="separator-line">|</b>');
+}
+
+function addGroup() {
+    location.href = '{{ url_for(".groups_new") }}'
+}
+
+function editGroup(cn) {
+    location.href = '{{ url_for('.groups_page') }}/edit/' + encodeURIComponent(cn);
+}
+
+function deleteGroup(cn) {
+    $.mj_confirm("确定删除组 " + cn + "？", function() {
+        $.mj_ajax('DELETE', "{{ url_for('.groups_page') }}/" + encodeURIComponent(cn), {}, function(result) {
+            if (result === 'success') {
+                $.mj_close();
+                $("#groups_table").mj_query();
+            } else {
+                $.mj_alert(result, null, 'error');
+            }
+        });
+    });
+}
+
+$(document).ready(function() {
+    $('#groups_table').mj_preloadTable();
+    $('#groups_table').mj_query();
+    $('#users_tab_link').on('show.bs.tab', function(e) {
+        location.href = "{{ url_for('.users_page') }}";
+    });
+});
+</script>
+{% endblock %}
+{% block content %}
+<ul class="nav nav-tabs tabs">
+    <li><a href="#users_tab" id="users_tab_link" data-toggle="tab">用户</a></li>
+    <li class="active"><a href="#groups_tab" id="groups_tab_link" data-toggle="tab">组</a></li>
+</ul>
+<div class="tab-content">
+    <div class="tab-pane in" id="users_tab"></div>
+    <div class="tab-pane in active" id="groups_tab">
+        {{ table.build('groups_table', allow_paging='false') }}
+        <div id="groups_table_heading">
+            <button type="button" class="btn btn-primary" onclick="addGroup()"><i class="fa fa-plus"></i> 新增组</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

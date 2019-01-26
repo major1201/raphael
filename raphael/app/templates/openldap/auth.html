@@ -1,0 +1,178 @@
+{% extends 'include/base.html' %}
+{% block title %}Openldap - 授权关系管理{% endblock %}
+{% block head %}{{ super() }}
+<link href="{{ url_for('static', filename='css/plugins/chosen/bootstrap-chosen.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='js/plugins/chosen/chosen.jquery.js') }}"></script>
+<script>
+var selectData = {{ selectData | safe }};
+const ENTITY_MAP = {
+    'OpenldapUser': '用户',
+    'OpenldapGroup': '用户组',
+    'OpenldapHost': '主机',
+    'OpenldapHostGroup': '主机组',
+    'OpenldapCommand': '命令',
+    'OpenldapCommandGroup': '命令组',
+    'OpenldapServicePoint': '服务',
+    'OpenldapService': '服务组'
+};
+
+var auth_table_prop = {
+    url: "{{ url_for('.auth_table') }}",
+    width: "100%",
+    order_by: "id",
+    query_form: 'authQueryForm',
+    page_size: 15
+};
+var auth_table_col = [
+    {title: "授权类型", prop: "sourceentity", width: "120px", js: 'colSourceEntity'},
+    {title: "授权对象", prop: "sourceid", align: "left", width: "220px"},
+    {title: "目标类型", prop: "grantentity", width: "120px", js: 'colGrantEntity'},
+    {title: "目标对象", prop: "grantid", align: "left", width: "220px"},
+    {title: "操作", align: "left", width: "auto", js: "colOp"}
+];
+
+function colSourceEntity(o) {
+    return ENTITY_MAP[o.sourceentity];
+}
+
+function colGrantEntity(o) {
+    return ENTITY_MAP[o.grantentity];
+}
+
+function colOp(o) {
+    var deleteLink = '<a href="javascript:void(0)" style="color: red;" onclick="deleteAuth(\'' + o.id + '\')"><i class="fa fa-trash"></i> 删除</a>';
+    return [deleteLink].join('<b class="separator-line">|</b>');
+}
+
+function addAuth() {
+    $('#sourceentity').val('').trigger('change');
+    $('#grantentity').val('').trigger('change');
+    $('#auth_dialog').mj_show()
+}
+
+function deleteAuth(oid) {
+    $.mj_confirm("确定删除？", function() {
+        $.mj_ajax('DELETE', "{{ url_for('.auth_page') }}/" + encodeURIComponent(oid), {}, function(result) {
+            if (result === 'success') {
+                $.mj_close();
+                $("#auth_table").mj_query();
+            } else {
+                $.mj_alert(result, null, 'error');
+            }
+        });
+    });
+}
+
+function toSubmit() {
+    $('#authDialogForm').mj_submit('POST', '{{ url_for(".auth_save") }}', function(result) {
+        if (result === 'success') {
+            $('#auth_dialog').mj_hide();
+            $('#auth_table').mj_query();
+        } else {
+            $.mj_alert(result, $.mj_close, 'error');
+        }
+    });
+}
+
+$(document).ready(function() {
+    $('#auth_table').mj_preloadTable();
+    $('#auth_dialog').mj_preloadDialog();
+    $('.chosen-select').chosen({width: '200px'});
+    $('.chosen-form').chosen({width: '100%'});
+    $('#qsourceentity').val('');
+    $('#qgrantentity').val('');
+    $('#auth_table').mj_query();
+
+    $.each({'qsource': {placeholder: '授权对象'}, 'qgrant': {placeholder: '授权目标'}, 'source': {placeholder: '授权对象'}, 'grant': {placeholder: '授权目标'}}, function(idPrefix, obj) {
+        $('#' + idPrefix + 'entity').on('change', function(o) {
+            var selectItems = ['<option value="">-- ' + obj.placeholder + ' --</option>'];
+            var entity = $('#' + idPrefix + 'entity').val();
+            if (entity in selectData) {
+                $.each(selectData[entity], function(i, o) {
+                    selectItems.push('<option value="' + o + '">' + o + '</option>');
+                });
+            }
+            $('#' + idPrefix + 'id').html(selectItems.join('')).trigger("chosen:updated");
+        });
+    });
+});
+</script>
+{% endblock %}
+{% block content %}
+<form id="authQueryForm" class="form-inline">
+<label for="qsourceentity" class="sr-only"></label>
+<select class="form-control" id="qsourceentity">
+    <option value="">-- 授权类型 --</option>
+    <option value="OpenldapHost">主机</option>
+    <option value="OpenldapHostGroup">主机组</option>
+    <option value="OpenldapCommand">命令</option>
+    <option value="OpenldapCommandGroup">命令组</option>
+    <option value="OpenldapServicePoint">服务</option>
+    <option value="OpenldapService">服务组</option>
+</select>
+<label for="qsourceid" class="sr-only"></label>
+<select data-placeholder="授权对象" class="chosen-select" id="qsourceid">
+    <option value="">-- 授权对象 --</option>
+</select>
+<label for="qgrantentity" class="sr-only"></label>
+<select class="form-control" id="qgrantentity" name="qgrantentity">
+    <option value="">-- 目标类型 --</option>
+    <option value="OpenldapUser">用户</option>
+    <option value="OpenldapGroup">用户组</option>
+</select>
+<label for="qgrantid" class="sr-only"></label>
+<select data-placeholder="目标对象" class="chosen-select" id="qgrantid" name="qgrantid">
+    <option value="">-- 目标对象 --</option>
+</select>
+<button type="button" class="btn btn-primary" onclick="$('#auth_table').mj_query();"><i class="fa fa-search"></i> Search</button>
+</form>
+
+<hr>
+
+{{ table.build('auth_table') }}
+<div id="auth_table_heading">
+    <button type="button" class="btn btn-primary" onclick="addAuth()"><i class="fa fa-plus"></i> 新增授权关系</button>
+</div>
+
+{{ dialog.build('auth_dialog', '新增授权关系') }}
+<div id="auth_dialog_body">
+<form role="form" id="authDialogForm">
+    <div class="form-group">
+        <label for="sourceentity">授权类型 <em>*</em></label>
+        <select class="form-control" id="sourceentity">
+            <option value="">-- 授权类型 --</option>
+            <option value="OpenldapHost">主机</option>
+            <option value="OpenldapHostGroup">主机组</option>
+            <option value="OpenldapCommand">命令</option>
+            <option value="OpenldapCommandGroup">命令组</option>
+            <option value="OpenldapServicePoint">服务</option>
+            <option value="OpenldapService">服务组</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="sourceid">授权对象 <em>*</em></label>
+        <select data-placeholder="授权对象" class="chosen-form" id="sourceid">
+            <option value="">-- 授权对象 --</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="grantentity">目标类型 <em>*</em></label>
+        <select class="form-control" id="grantentity">
+            <option value="">-- 目标类型 --</option>
+            <option value="OpenldapUser">用户</option>
+            <option value="OpenldapGroup">用户组</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="grantid">目标对象 <em>*</em></label>
+        <select data-placeholder="目标对象" class="chosen-form" id="grantid">
+            <option value="">-- 目标对象 --</option>
+        </select>
+    </div>
+</form>
+</div>
+<div id="auth_dialog_footer">
+<button type="button" class="btn btn-primary" onclick="toSubmit()">保存</button>
+<button type="button" class="btn btn-default" onclick="$('#auth_dialog').mj_hide()">取消</button>
+</div>
+{% endblock %}

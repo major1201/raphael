@@ -1,0 +1,148 @@
+{% extends 'include/base.html' %}
+{% block title %}Openldap - 主机管理{% endblock %}
+{% block head %}{{ super() }}
+<script>
+var hosts_table_prop = {
+    url: "{{ url_for('.hosts_table') }}",
+    width: "100%",
+    order_by: "id"
+};
+var hosts_table_col = [
+    {title: "主机名", prop: "cn", align: "left", width: "200px"},
+    {title: "IP 地址", prop: "ipHostNumber", align: "left", width: "150px"},
+    {title: "主机组", prop: "groups", align: "left", width: "auto", js: 'colGroups'},
+    {title: "操作", align: "left", width: "150px", js: "colOp"}
+];
+
+function colGroups(row) {
+    var arr = [];
+    $.each(row.groups.sort(), function(i, o) {
+        arr.push('<span class="label label-default">' + o + '</span>');
+    });
+    return arr.join('&nbsp;');
+}
+
+function colOp(o) {
+    var editLink = '<a href="javascript:void(0)" onclick="editHost(\'' + o.cn + '\')"><i class="fa fa-pencil"></i> 编辑</a>';
+    var deleteLink = '<a href="javascript:void(0)" style="color: red;" onclick="deleteHost(\'' + o.cn + '\')"><i class="fa fa-trash"></i> 删除</a>';
+    return [editLink, deleteLink].join('<b class="separator-line">|</b>');
+}
+
+function addHost() {
+    $('#hosts').val('');
+    $('#import_hosts_dialog').mj_show();
+}
+
+function importHosts() {
+    $('#importHostForm').mj_submit('POST', "{{ url_for('.hosts_import') }}", function(result) {
+        result = JSON.parse(result);
+        var msg = '成功导入 ' + result.success_count + ' 条主机信息，失败 ' + result.fail_count + ' 条信息' + (result.fail_count === 0 ? '' : '<br>') + result.error_items.join('<br>');
+        $.mj_alert(msg,
+            function() {
+                $.mj_close();
+                $('#import_hosts_dialog').mj_hide();
+                $('#hosts_table').mj_query();
+            },
+            result.fail_count === 0 ? 'success' : 'error'
+        );
+    });
+}
+
+function editHost(cn) {
+    $.mj_ajax('GET', '{{ url_for(".hosts_page") }}/' + encodeURIComponent(cn), {}, function(result) {
+        result = JSON.parse(result);
+        if (result === null) {
+            $.mj_alert('主机不存在！', $.mj_close, 'error');
+            return;
+        }
+        $('#cn').val(cn);
+        $('#ip_host_number').val(result.ipHostNumber);
+        $('#edit_host_dialog').mj_show();
+    });
+}
+
+function saveHost() {
+    $('#editHostForm').mj_submit('POST', '{{ url_for(".hosts_save") }}', function(result) {
+        if (result === 'success') {
+            $.mj_alert('保存成功！', function() {
+                $.mj_close();
+                $('#edit_host_dialog').mj_hide();
+                $('#hosts_table').mj_query();
+            }, 'success');
+        } else {
+            $.mj_alert('保存失败！', $.mj_close, 'error');
+        }
+    });
+}
+
+function deleteHost(cn) {
+    $.mj_confirm("确定删除主机 " + cn + "？", function() {
+        $.mj_ajax('DELETE', "{{ url_for('.hosts_page') }}/" + encodeURIComponent(cn), {}, function(result) {
+            if (result === 'success') {
+                $.mj_close();
+                $("#hosts_table").mj_query();
+            } else {
+                $.mj_alert(result, null, 'error');
+            }
+        });
+    });
+}
+
+$(document).ready(function() {
+    $('#hosts_table').mj_preloadTable();
+    $('#import_hosts_dialog').mj_preloadDialog();
+    $('#edit_host_dialog').mj_preloadDialog();
+    $('#hosts_table').mj_query();
+    $('#host_groups_tab_link').on('show.bs.tab', function(e) {
+        location.href = "{{ url_for('.host_groups_page') }}";
+    });
+});
+</script>
+{% endblock %}
+{% block content %}
+<ul class="nav nav-tabs tabs">
+    <li class="active"><a href="#hosts_tab" id="hosts_tab_link" data-toggle="tab">主机</a></li>
+    <li><a href="#host_groups_tab" id="host_groups_tab_link" data-toggle="tab">主机组</a></li>
+</ul>
+<div class="tab-content">
+    <div class="tab-pane in active" id="hosts_tab">
+        {{ table.build('hosts_table', allow_paging='false') }}
+        <div id="hosts_table_heading">
+            <button type="button" class="btn btn-primary" onclick="addHost()"><i class="fa fa-plus"></i> 导入主机</button>
+        </div>
+    </div>
+    <div class="tab-pane in" id="host_groups_tab"></div>
+</div>
+
+{{ dialog.build('import_hosts_dialog', '导入主机', '800px') }}
+<div id="import_hosts_dialog_body">
+    <form id="importHostForm">
+        <p style="color: red;">*注意*：格式为标准 <b>hosts</b> 文件，有多个主机名的，cn 取第一个主机名。</p>
+        <textarea class="form-control code-textarea" id="hosts" name="hosts" rows="15"></textarea>
+    </form>
+</div>
+<div id="import_hosts_dialog_footer">
+    <button type="button" class="btn btn-primary" onclick="importHosts()">Import</button>
+    <button type="button" class="btn btn-default" onclick="$('#import_hosts_dialog').mj_hide();">Cancel</button>
+</div>
+
+{{ dialog.build('edit_host_dialog', '编辑主机', '600px') }}
+<div id="edit_host_dialog_body">
+    <form id="editHostForm">
+        <dl class="dl-horizontal">
+            <dt>主机名:</dt>
+            <dd>
+                <input type="text" class="form-control has-error" id="cn" name="cn" maxlength="80" style="width: 300px;" disabled>
+            </dd>
+            <dt>IP 地址<em>*</em>:</dt>
+            <dd>
+                <input type="text" class="form-control has-error" id="ip_host_number" name="ip_host_number" maxlength="80" style="width: 300px;" placeholder="e.g. 127.0.0.1">
+            </dd>
+        </dl>
+    </form>
+</div>
+<div id="edit_host_dialog_footer">
+    <button type="button" class="btn btn-primary" onclick="saveHost()">Save</button>
+    <button type="button" class="btn btn-default" onclick="$('#edit_host_dialog').mj_hide();">Cancel</button>
+</div>
+{% endblock %}

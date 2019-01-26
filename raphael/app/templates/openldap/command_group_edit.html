@@ -1,0 +1,72 @@
+{% extends 'include/base.html' %}
+{% block title %}Openldap - 编辑命令组{% endblock %}
+{% block head %}{{ super() }}
+<script>
+var commands_table_prop = {
+    url: "{{ url_for('.commands_table') }}",
+    width: "100%",
+    order_by: "id",
+    after_query: "afterQuery"
+};
+var commands_table_col = [
+    {title: "<input type='checkbox' style='margin:0;' id='selectall'>", width: "70px", js: 'colCheckbox'},
+    {title: "名称", prop: "cn", align: "left", width: "200px"},
+    {title: "命令", prop: "sudoCommand", align: "left", width: "auto"}
+];
+
+function afterQuery(data) {
+    mj.checkbox.buildSelectAll("selectall", "chk");
+    // restore selections
+    mj.checkbox.setVal('chk', '{{ uniqueMember | join(",") }}');
+}
+
+function colCheckbox(row) {
+    return "<input type='checkbox' style='margin:0;' name='chk' id='chk" + row.cn + "' value='" + row.cn + "'>";
+}
+
+function getBack() {
+    location.href = "{{ url_for('openldap.command_groups_page') }}";
+}
+
+function toSubmit() {
+    $.mj_confirm("Confirm to submit?", function() {
+        $('#unique_member').val(JSON.stringify(mj.checkbox.getVal('chk')));
+        $("#editCommandGroupFrom").mj_submit('POST', "{{ url_for('openldap.command_groups_save') }}", function(result) {
+            if (result !== 'success') {
+                $.mj_alert(result, null, 'error');
+            } else {
+                $.mj_alert("Saved successfully!", getBack, 'success');
+            }
+        });
+    });
+}
+
+function toCancel() {
+    $.mj_confirm("Confirm to cancel?", getBack);
+}
+
+$(document).ready(function() {
+    $('#commands_table').mj_preloadTable();
+    $('#commands_table').mj_query();
+});
+</script>
+{% endblock %}
+{% block content %}
+<form id="editCommandGroupFrom">
+    <input type="hidden" id="opt" name="opt" value="EDIT">
+    <input type="hidden" id="unique_member" name="unique_member" value="">
+    <div class="tab-pane in active">
+        <div class="panel panel-default" style="padding: 20px 30px 0 0;">
+            <dl class="dl-horizontal">
+                <dt>命令组:</dt>
+                <dd>
+                    <input type="text" class="form-control has-error" id="cn" name="cn" value="{{ cn | default('') }}" style="width: 300px;" disabled>
+                </dd>
+            </dl>
+        </div>
+    </div>
+</form>
+{{ table.build('commands_table', allow_paging='false') }}
+<button type="button" class="btn btn-primary" onclick="toSubmit()">Submit</button>
+<button type="button" class="btn btn-default" onclick="toCancel()">Cancel</button>
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends 'include/base.html' %}
+{% block title %}功能管理{% endblock %}
+{% block head %}{{ super() }}
+<script>
+var functionTable_prop = {
+    "url": "/function/table",
+    "width": "100%",
+    "order_by": "name",
+    "page_size": 15
+};
+var functionTable_col = [
+    {"title": "名称", "prop": "name", "align": "left", "allow_sort": true},
+    {"title": "操作", "align": "left", "width": "200px", "js": "colOp"}
+];
+
+var functionAuthTable_prop = {
+    "url": "/function/auth",
+    "query_form": "functionAuthForm",
+    "width": "100%",
+    "striped": false,
+    "order_by": "loginid"
+};
+var functionAuthTable_col = [
+    {title: "登录名", prop: "loginid", align: "left", width: "30%", allow_sort: true},
+    {title: "名称", prop: "name", align: "left", width: "40%", allow_sort: true},
+    {title: "操作", align: "left", width: "30%", js: "colUserJs"}
+];
+
+$(document).ready(function() {
+    $("#functionTable").mj_preloadTable();
+    $("#functionTable").mj_query();
+    $("#editFunction").mj_preloadDialog();
+    $("#functionAuthTable").mj_preloadTable();
+    $("#functionAuth").mj_preloadDialog();
+});
+
+function addFunction() {
+    $("#id").val("");
+    $("#name").val("");
+    $("#namelabel").hide();
+    $("#editFunction").mj_show("新建功能");
+}
+
+function saveFunction() {
+    if ($.isBlank($("#name").val())) {
+        checkInput($("#name"), $("#namelabel"));
+        $.mj_alert("无法保存");
+        return;
+    }
+    $("#editFunctionForm").mj_submit('POST', "/function/save", function(result) {
+    if (result != "success") {
+        $.mj_alert(result);
+    } else {
+        $.mj_alert("保存成功！");
+        $('#editFunction').mj_hide();
+        $("#functionTable").mj_query();
+    }
+  });
+}
+
+function editFunction(id) {
+    $("#id").val(id);
+    $("#namelabel").hide();
+    $.mj_ajax('POST', "/function/get", {id: id}, function(result) {
+        if (result == null) {
+            $.mj_alert("该功能不存在");
+        } else {
+            result = $.parseJSON(result);
+            $("#name").val(result.name);
+            $("#editFunction").mj_show("编辑功能");
+        }
+    });
+}
+
+function deleteFunction(id) {
+    $.mj_confirm("确认删除？", function() {
+        $.mj_ajax('POST', "/function/delete", {id: id}, function (result) {
+            $("#functionTable").mj_query();
+            $.mj_alert("删除成功！");
+        });
+    });
+}
+
+function colOp(o) {
+    var arr = [];
+    arr.push("<a href=\"javascript:void(0);\" onclick='editFunction(\"" + o.id + "\")'>编辑</a>");
+    arr.push("<a href=\"javascript:void(0);\" onclick='deleteFunction(\"" + o.id + "\")'>删除</a>");
+    arr.push("<a href=\"javascript:void(0);\" onclick='openAuth(\"" + o.id + "\")'>设置权限</a>");
+    return arr.join("<b class='separator-line'>|</b>");
+}
+
+function colUrl(o) {
+    return "<a href='" + o.url + "'>" + o.url + "</a>";
+}
+
+function openAuth(id) {
+    $("#functionid").val(id);
+    $("#functionAuth").mj_show();
+    $("#functionAuthTable").mj_query();
+}
+
+function colUserJs(o) {
+    if ($.isBlank(o.authid)) {
+        return "<a href=\"javascript:void(0);\" onclick='setUserFunctionAuth(\"" + o.id + "\",1)'>授予</a>";
+    } else {
+        return "<a href=\"javascript:void(0);\" onclick='setUserFunctionAuth(\"" + o.id + "\",2)'>剥夺</a>";
+    }
+}
+
+function setUserFunctionAuth(userId, type) {
+    $.mj_ajax('POST', "/function/setauth", {functionId:$("#functionid").val(),userId:userId,type:type}, function(result) {
+        if (result != "success") {
+            $.mj_alert(result);
+        } else {
+            $("#functionAuthTable").mj_query($("#functionAuthTable").mj_currentPage());
+        }
+    });
+}
+
+function checkInput(checkObj, showObj) {
+  if ($.isBlank($(checkObj).val())) {
+    $(showObj).show();
+  } else {
+    $(showObj).hide();
+  }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+{{ table.build('functionTable') }}
+<div id="functionTable_heading">
+    <button type="button" class="btn btn-default" onclick="addFunction()">新增功能</button>
+</div>
+
+{{ dialog.build('editFunction', width='400px', title="功能") }}
+<div id="editFunction_body">
+    <form id="editFunctionForm">
+        <input type="hidden" id="id" name="id">
+        <dl class="dl-horizontal" style="margin-left: -80px;">
+            <dt>名称</dt>
+            <dd>
+                <input type="text" class="form-control" id="name" name="name"
+                       placeholder="请输入名称" onblur="checkInput(this,$('#namelabel'))">
+                <span id="namelabel" class="label label-danger" style="display: none;">名称不能为空<br/></span><br/>
+            </dd>
+        </dl>
+    </form>
+</div>
+<div id="editFunction_footer">
+    <button type="button" class="btn btn-primary" onclick="saveFunction()">保存</button>
+    <button type="button" class="btn btn-default" onclick="$('#editFunction').mj_hide();">关闭</button>
+</div>
+
+{{ dialog.build('functionAuth', width='500px', title="功能权限") }}
+<div id="functionAuth_body">
+    <form id="functionAuthForm">
+      <input type="hidden" name="functionid" id="functionid">
+    </form>
+    {{ table.build('functionAuthTable') }}
+</div>
+<div id="functionAuth_footer">
+    <button type="button" class="btn btn-default" onclick="$('#functionAuth').mj_hide();">关闭</button>
+</div>
+{% endblock %}

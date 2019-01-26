@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="/static/css/bootstrap.min.css"/>
+<script src="/static/js/jquery.min.js"></script>
+<script src="/static/js/bootstrap.min.js"></script>
+<script src="/static/js/mj-core.js"></script>
+<title>Form</title>
+<script>
+$.fn.extend({
+    mj_val:function(data) {
+        var obj = this[0];
+        var id = $(obj).attr("id");
+        var name = $(obj).attr("name");
+        var tagName = "";
+        if ($(obj)[0] != undefined) tagName = $(obj)[0].tagName.toUpperCase();
+
+        alert(tagName);
+        if (data == undefined) {
+//            if (type == "radio") {
+//                var value = "";
+//                $.each($("input[name='" + name + "']:checked"), function(i,n) {
+//                    value = $(n).val();
+//                });
+//                return value;
+//            } else {
+//                return $(obj).val();
+//            }
+        } else {
+//            if (type == "radio") {
+//                $.each($("input[name='" + name + "']"), function(i,n) {
+//                    if($(n).attr("checked")) $(n).removeAttr("checked");
+//                    if($(n).val() == data) $(n).attr("checked",true);
+//                });
+//            } else {
+//                $(obj).val(data);
+//            }
+        }
+        return $(this);
+    }
+});
+
+function test() {
+    $("#select").html("");
+}
+
+$(document).ready(function() {
+    mj.checkbox.buildSelectAll("selall", "checkbox");
+});
+</script>
+</head>
+<body>
+<form class="form-inline">
+    <button class="btn btn-default" type="button" onclick="test();">Test</button>
+    <h2><b>1.Text</b></h2>
+    <div class="form-group" style="width: 300px;">
+        <input type="text" class="form-control" id="text" placeholder="Enter text" value="default">
+    </div>
+    <button type="button" class="btn btn-primary" onclick="$('#text').val('value')">Set value</button>
+    <button type="button" class="btn btn-default" onclick="alert($('#text').val())">Get value</button>
+
+    <h2><b>2.Password</b></h2>
+    <div class="form-group" style="width: 300px;">
+        <input type="password" class="form-control" id="password" placeholder="Enter password" value="default">
+    </div>
+    <button type="button" class="btn btn-primary" onclick="$('#password').val('value')">Set value</button>
+    <button type="button" class="btn btn-default" onclick="alert($('#password').val())">Get value</button>
+
+    <h2><b>3.Radio</b></h2>
+    <div class="radio" style="width: 150px;">
+        <label><input type="radio" name="radio" value="1">radio1</label>
+    </div>
+    <div class="radio" style="width: 150px;">
+        <label><input type="radio" name="radio" value="2">radio2</label>
+    </div>
+    <button type="button" class="btn btn-primary" onclick="mj.radio.setVal('radio','1')">Set value</button>
+    <button type="button" class="btn btn-default" onclick="alert(mj.radio.getVal('radio'))">Get value</button>
+
+    <h2><b>4.Checkbox</b></h2>
+    <div class="checkbox" style="width: 150px;">
+        <label><input type="checkbox" id="selall">Select all</label>
+    </div>
+    <br/>
+    <div class="checkbox" style="width: 150px;">
+        <label><input type="checkbox" name="checkbox" value="1">checkbox1</label>
+    </div>
+    <div class="checkbox" style="width: 150px;">
+        <label><input type="checkbox" name="checkbox" value="2">checkbox2</label>
+    </div>
+    <div class="checkbox" style="width: 150px;">
+        <label><input type="checkbox" name="checkbox" value="3">checkbox3</label>
+    </div>
+    <div class="checkbox" style="width: 150px;">
+        <label><input type="checkbox" name="checkbox" value="4" disabled>checkbox4</label>
+    </div>
+    <button type="button" class="btn btn-primary" onclick="mj.checkbox.setVal('checkbox','2,4')">Set value</button>
+    <button type="button" class="btn btn-default" onclick="alert(mj.checkbox.getVal('checkbox'))">Get value</button>
+
+    <h2><b>5.Select</b></h2>
+    <label class="sr-only" for="select">select:</label>
+    <select id="select" class="form-control" style="width: 300px;">
+        <option value="">--Please select--</option>
+        <option value="1">option1</option>
+        <option value="2">option2</option>
+        <option value="3">option3</option>
+        <option value="4">option4</option>
+    </select>
+    <button type="button" class="btn btn-primary" onclick="$('#select').val('2')">Set value</button>
+    <button type="button" class="btn btn-default" onclick="alert($('#select').val())">Get value</button>
+
+    <br/>
+
+    <label class="sr-only" for="selectmulti">select multi:</label>
+    <select id="selectmulti" class="form-control" style="width: 300px;" multiple>
+        <option value="1">option1</option>
+        <option value="2">option2</option>
+        <option value="3">option3</option>
+        <option value="4">option4</option>
+    </select>
+    <button type="button" class="btn btn-primary" onclick="$('#selectmulti').val(['2','3'])">Set value</button>
+    <button type="button" class="btn btn-default" onclick="alert($('#selectmulti').val())">Get value</button>
+
+    <h2><b>6.Disabled</b></h2>
+    <div class="form-group" style="width: 300px;">
+        <input type="text" class="form-control" placeholder="Enter text" value="disabled" disabled>
+    </div>
+    <br/>
+    <div class="radio" style="width: 150px;">
+        <label><input type="radio" name="radiodisabled" value="1" disabled>radio1</label>
+    </div>
+    <div class="radio" style="width: 150px;">
+        <label><input type="radio" name="radiodisabled" value="2" disabled>radio2</label>
+    </div>
+    <br/>
+    <div class="checkbox" style="width: 150px;">
+        <label><input type="checkbox" disabled>Can't check it</label>
+    </div>
+
+    <h2><b>7.Status</b></h2>
+    <div class="form-group has-success">
+        <label class="control-label" for="inputSuccess">Input with success</label>
+        <input type="text" class="form-control" id="inputSuccess">
+    </div>
+    <div class="form-group has-warning">
+        <label class="control-label" for="inputWarning">Input with warning</label>
+        <input type="text" class="form-control" id="inputWarning">
+    </div>
+    <div class="form-group has-error">
+        <label class="control-label" for="inputError">Input with error</label>
+        <input type="text" class="form-control" id="inputError">
+    </div>
+
+    <h2><b>8.Size</b></h2>
+    <input class="form-control input-lg" type="text" placeholder=".input-lg"><br/>
+    <input class="form-control" type="text" placeholder="Default input"><br/>
+    <input class="form-control input-sm" type="text" placeholder=".input-sm"><br/>
+    <select class="form-control input-lg">
+        <option>.input-lg</option>
+    </select>
+    <br/>
+    <select class="form-control">
+        <option>default</option>
+    </select>
+    <br/>
+    <select class="form-control input-sm">
+        <option>input-sm</option>
+    </select>
+    <br/>
+    <div class="row">
+        <div class="col-xs-2">
+            <input type="text" class="form-control" placeholder=".col-xs-2">
+        </div>
+        <div class="col-xs-3">
+            <input type="text" class="form-control" placeholder=".col-xs-3">
+        </div>
+        <div class="col-xs-4">
+            <input type="text" class="form-control" placeholder=".col-xs-4">
+        </div>
+    </div>
+
+    <h2><b>9.Input group</b></h2>
+    <div class="input-group">
+        <span class="input-group-addon">@</span>
+        <input type="text" class="form-control" placeholder="Username">
+    </div>
+    <br/>
+    <div class="input-group">
+        <input type="text" class="form-control">
+        <span class="input-group-addon">.00</span>
+    </div>
+    <br/>
+    <div class="input-group">
+        <span class="input-group-addon">$</span>
+        <input type="text" class="form-control">
+        <span class="input-group-addon">.00</span>
+    </div>
+    <br/>
+    <div class="row">
+        <div class="col-xs-3">
+            <div class="input-group">
+                <span class="input-group-addon"><input type="checkbox"></span>
+                <input type="text" class="form-control">
+            </div>
+        </div>
+        <div class="col-xs-3">
+            <div class="input-group">
+                <span class="input-group-addon"><input type="radio"></span>
+                <input type="text" class="form-control">
+            </div>
+        </div>
+    </div>
+    <br/>
+    <div class="row">
+        <div class="col-xs-3">
+            <div class="input-group">
+                <div class="input-group-btn">
+                    <button type="button" class="btn btn-default">Go!</button>
+                </div>
+                <input type="text" class="form-control">
+            </div>
+        </div>
+        <div class="col-xs-3">
+            <div class="input-group">
+                <input type="text" class="form-control">
+                <div class="input-group-btn">
+                    <button type="button" class="btn btn-default">Go!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+</body>
+</html>

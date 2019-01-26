@@ -1,0 +1,16 @@
+[Unit]
+Description=uWSGI instance to serve raphael
+After=syslog.target
+
+[Service]
+ExecStart=/opt/raphael/venv/bin/uwsgi --ini /etc/raphael/uwsgi.ini
+ExecReload=/bin/kill -HUP $MAINPID
+KillSignal=SIGINT
+SuccessExitStatus=15 17 29 30
+Restart=always
+Type=notify
+StandardError=syslog
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target

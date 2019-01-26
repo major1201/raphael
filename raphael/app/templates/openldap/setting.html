@@ -1,0 +1,192 @@
+{% extends 'include/base.html' %}
+{% block title %}Openldap - 设置{% endblock %}
+{% block head %}{{ super() }}
+<style>
+.vertical-middle {
+    vertical-align: middle !important;
+}
+</style>
+<script>
+var settings = JSON.parse('{{ settings | tojson }}');
+
+function flushSettings() {
+    $.each(settings, function(i, o) {
+        var obj = $('#' + o.name.replace(/\./g, '\\.'));
+        switch (obj.attr('type')) {
+            case 'checkbox':
+                var val = o.value === 'true' || o.value === 'yes' || o.value === '1';
+                obj.prop('checked', val);
+                obj.data('oldvalue', val);
+                break;
+            default:
+                obj.val(o.value);
+                obj.data('oldvalue', o.value);
+                break;
+        }
+        obj.data('oid', o.id);
+    });
+}
+
+function save() {
+    var changedSettings = [];
+    $.each(settings, function(i, o) {
+        var obj = $('#' + o.name.replace(/\./g, '\\.'));
+        switch (obj.attr('type')) {
+            case 'checkbox':
+                if (obj.prop('checked') !== obj.data('oldvalue')) {
+                    changedSettings.push({
+                        'id': obj.data('oid'),
+                        'name': o.name,
+                        'value': obj.prop('checked') ? 'true' : 'false'
+                    });
+                }
+                break;
+            default:
+                if (obj.val() !== obj.data('oldvalue')) {
+                    changedSettings.push({
+                        'id': obj.data('oid'),
+                        'name': o.name,
+                        'value': obj.val()
+                    });
+                }
+                break;
+        }
+    });
+    if (changedSettings.length === 0) {
+        return;
+    }
+    $.mj_ajax('POST', '{{ url_for(".setting_save") }}', {settings: JSON.stringify(changedSettings)}, function(result) {
+        result = JSON.parse(result);
+        if (result.success) {
+            settings = result.newsettings;
+            flushSettings();
+        } else {
+            $.mj_alert(result, $.mj_close, 'error');
+        }
+    });
+}
+
+function testConnection() {
+    $.mj_ajax('GET', '{{ url_for(".test_connection") }}', {}, function (result) {
+        if (result === 'success') {
+            $.mj_alert('连接成功！', $.mj_close, 'success');
+        } else {
+            $.mj_alert('连接失败: ' + result, $.mj_close, 'error');
+        }
+    });
+}
+
+function constructSkeleton() {
+    $.mj_ajax('POST', '{{ url_for(".skel") }}', {}, function (result) {
+        if (result === 'success') {
+            $.mj_alert('OU 新建成功！', $.mj_close, 'success');
+        } else {
+            $.mj_alert('OU 新建失败！', $.mj_close, 'error');
+        }
+    });
+}
+
+$(document).ready(function() {
+    flushSettings();
+});
+</script>
+{% endblock %}
+{% block content %}
+<div class="panel panel-primary">
+    <div class="panel-heading"><h4 class="panel-title"><a data-toggle="collapse" href="#collapse-summary">基本配置</a></h4></div>
+    <div id="collapse-summary" class="panel-collapse collapse in">
+        <div class="panel-body">
+            <table class="table table-striped table-hover" style="table-layout: fixed">
+            <tbody>
+            <tr>
+                <th style="width: 300px;">名称</th>
+                <th style="width: auto;">设置项</th>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.uri">URI</td>
+                <td><input type="text" class="form-control" id="openldap.uri" name="openldap.uri" title="openldap.uri"></td>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.start_tls">启用 Start TLS</td>
+                <td><input type="checkbox" style="width: 30px;" class="form-control" id="openldap.start_tls" name="openldap.start_tls" title="openldap.start_tls"></td>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.basedn">Base DN</td>
+                <td><input type="text" class="form-control" id="openldap.basedn" name="openldap.basedn" title="openldap.basedn"></td>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.manager">管理员 DN</td>
+                <td><input type="text" class="form-control" id="openldap.manager" name="openldap.manager" title="openldap.manager"></td>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.passwd">管理员密码</td>
+                <td><input type="text" class="form-control" id="openldap.passwd" name="openldap.passwd" title="openldap.passwd"></td>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.ou_people">用户 OU</td>
+                <td><input type="text" class="form-control" id="openldap.ou_people" name="openldap.ou_people" title="openldap.ou_people"></td>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.ou_groups">用户组 OU</td>
+                <td><input type="text" class="form-control" id="openldap.ou_groups" name="openldap.ou_groups" title="openldap.ou_groups"></td>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.ou_hosts">主机 OU</td>
+                <td><input type="text" class="form-control" id="openldap.ou_hosts" name="openldap.ou_hosts" title="openldap.ou_hosts"></td>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.ou_host_groups">主机组 OU</td>
+                <td><input type="text" class="form-control" id="openldap.ou_host_groups" name="openldap.ou_host_groups" title="openldap.ou_host_groups"></td>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.ou_commands">命令 OU</td>
+                <td><input type="text" class="form-control" id="openldap.ou_commands" name="openldap.ou_commands" title="openldap.ou_commands"></td>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.ou_command_groups">命令组 OU</td>
+                <td><input type="text" class="form-control" id="openldap.ou_command_groups" name="openldap.ou_command_groups" title="openldap.ou_command_groups"></td>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.ou_services">服务 OU</td>
+                <td><input type="text" class="form-control" id="openldap.ou_services" name="openldap.ou_services" title="openldap.ou_services"></td>
+            </tr>
+            </tbody>
+            </table>
+            <button type="button" class="btn btn-success" onclick="testConnection()">测试连接</button>
+            <button type="button" class="btn btn-success" onclick="constructSkeleton()">建基本 OU</button>
+        </div>
+    </div>
+</div>
+<div class="panel panel-primary">
+    <div class="panel-heading"><h4 class="panel-title"><a data-toggle="collapse" href="#collapse-ppolicy">密码策略</a></h4></div>
+    <div id="collapse-ppolicy" class="panel-collapse collapse in">
+        <div class="panel-body">
+            <table class="table table-striped table-hover" style="table-layout: fixed">
+            <tbody>
+            <tr>
+                <th style="width: 300px;">名称</th>
+                <th style="width: auto;">设置项</th>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.shadow.min">最少修改密码时间（天）（0 为不限制）</td>
+                <td><input type="number" class="form-control" id="openldap.shadow.min" name="openldap.shadow.min" title="openldap.shadow.min" min="0"></td>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.shadow.max">密码过期时间（天）</td>
+                <td><input type="number" class="form-control" id="openldap.shadow.max" name="openldap.shadow.max" title="openldap.shadow.max" min="0"></td>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.shadow.inactive">过期后可持续登录时间（天）</td>
+                <td><input type="number" class="form-control" id="openldap.shadow.inactive" name="openldap.shadow.inactive" title="openldap.shadow.inactive" min="0"></td>
+            </tr>
+            <tr>
+                <td class="vertical-middle" title="openldap.shadow.warning">提前多少天提示密码将要过期</td>
+                <td><input type="number" class="form-control" id="openldap.shadow.warning" name="openldap.shadow.warning" title="openldap.shadow.warning" min="0"></td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<button type="button" class="btn btn-primary" onclick="save()">保存全部</button>
+{% endblock %}

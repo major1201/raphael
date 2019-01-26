@@ -1,0 +1,108 @@
+{% extends 'include/base.html' %}
+{% block title %}Openldap - 编辑用户{% endblock %}
+{% block head %}{{ super() }}
+<script>
+function getBack() {
+    location.href = "{{ url_for('openldap.users_page') }}";
+}
+
+function toSubmit() {
+    if ($.isBlank($("#cn").val()) || $.isBlank($("#sn").val()) || $.isBlank($("#uid").val())) {
+        checkInput($("#cn"), $("#cnlabel"));
+        checkInput($("#sn"), $("#snlabel"));
+        checkInput($("#uid"), $("#uidlabel"));
+        $.mj_alert("Please check again!", null, 'error');
+        return;
+    }
+    $.mj_confirm("Confirm to submit?", function() {
+        $("#editUserFrom").mj_submit('POST', "{{ url_for('openldap.users_save') }}", function(result) {
+            result = JSON.parse(result);
+            if (result.success !== true) {
+                $.mj_alert(result.error_msg, null, 'error');
+            } else {
+                if ("{{ opt }}" === "NEW") {
+                    $.mj_alert("Saved successfully, new password is: " + result.new_password, getBack, 'success');
+                } else {
+                    $.mj_alert("Saved successfully!", getBack, 'success');
+                }
+            }
+        });
+    });
+}
+
+function toCancel() {
+    $.mj_confirm("Confirm to cancel?", getBack);
+}
+
+function checkInput(checkObj, showObj) {
+    if ($.isBlank($(checkObj).val())) {
+        $(showObj).show();
+    } else {
+        $(showObj).hide();
+    }
+}
+
+$(document).ready(function() {
+    if ("{{ opt }}" === "EDIT") {
+        if ("{{ dn | default('error') }}" === "error") {
+            $.mj_alert('用户不存在！', getBack, 'error');
+        } else {
+            $('#gid').val('{{ gidNumber | default(100) }}')
+        }
+    }
+});
+</script>
+{% endblock %}
+{% block content %}
+<form id="editUserFrom">
+    <input type="hidden" id="dn" name="dn" value="{{ dn | default('') }}">
+    <div class="tab-pane in active">
+        <div class="panel panel-default" style="padding: 20px 30px 0 0;">
+            <dl class="dl-horizontal">
+                <dt>登录名<em>*</em>:</dt>
+                <dd>
+                    <input type="text" class="form-control has-error" id="cn" name="cn" value="{{ cn | default('') }}" maxlength="80" onblur="checkInput(this,$('#cnlabel'))" style="width: 300px;" placeholder="e.g. user1" {{ "disabled" if opt == "EDIT" }}>
+                    <span id="cnlabel" class="label label-danger" style="display: none;">Cannot be blank<br/></span><br/>
+                </dd>
+                <dt>姓<em>*</em>:</dt>
+                <dd>
+                    <input type="text" class="form-control has-error" id="sn" name="sn" value="{{ sn | default('') }}" maxlength="80" onblur="checkInput(this,$('#snlabel'))" style="width: 100px;" placeholder="e.g. John">
+                    <span id="snlabel" class="label label-danger" style="display: none;">Cannot be blank<br/></span><br/>
+                </dd>
+                <dt>UID<em>*</em>:</dt>
+                <dd>
+                    <input type="number" class="form-control has-error" id="uid" name="uid" value="{{ uidNumber | default('') }}" maxlength="80" onblur="checkInput(this,$('#uidlabel'))" style="width: 300px;" placeholder="e.g. 11001">
+                    <span id="uidlabel" class="label label-danger" style="display: none;">Cannot be blank<br/></span><br/>
+                </dd>
+                <dt>组<em>*</em>:</dt>
+                <dd>
+                    <select id="gid" class="form-control" style="width: 300px;display: inline-block;">
+                        <option value="100">users (100)</option>
+                        {% for group in groups %}
+                            <option value="{{ group.gidNumber }}">{{ group.cn }} ({{ group.gidNumber }})</option>
+                        {% endfor %}
+                    </select>
+                </dd>
+                <br>
+                <dt>显示名:</dt>
+                <dd>
+                    <input type="text" class="form-control has-error" id="displayName" name="displayName" value="{{ displayName | default('') }}" maxlength="80" style="width: 300px;" placeholder="e.g. User1">
+                    <br>
+                </dd>
+                <dt>Gecos:</dt>
+                <dd>
+                    <input type="text" class="form-control has-error" id="gecos" name="gecos" value="{{ gecos | default('') }}" maxlength="80" style="width: 300px;" placeholder="e.g. User1(DevOps)">
+                    <br>
+                </dd>
+                <dt>Email:</dt>
+                <dd>
+                    <input type="text" class="form-control has-error" id="mail" name="mail" value="{{ mail | default('') }}" maxlength="80" style="width: 500px;" placeholder="e.g. user1@gmail.com">
+                    <br>
+                </dd>
+            </dl>
+        </div>
+    </div>
+</form>
+<button type="button" class="btn btn-primary" onclick="toSubmit()">Submit</button>
+<button type="button" class="btn btn-default" onclick="toCancel()">Cancel</button>
+{% endblock %}

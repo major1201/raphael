@@ -1,0 +1,117 @@
+{% extends 'include/base.html' %}
+{% block title %}Openldap - 服务管理{% endblock %}
+{% block head %}{{ super() }}
+<script>
+var services_table_prop = {
+    url: "{{ url_for('.services_table') }}",
+    width: "100%",
+    order_by: "id"
+};
+var services_table_col = [
+    {title: "名称", prop: "cn", align: "left", width: "200px"},
+    {title: "服务", prop: "authorizedService", align: "left", width: "auto"},
+    {title: "操作", align: "left", width: "150px", js: "colOp"}
+];
+
+function colOp(o) {
+    var editLink = '<a href="javascript:void(0)" onclick="editService(\'' + o.cn + '\')"><i class="fa fa-pencil"></i> 编辑</a>';
+    var deleteLink = '<a href="javascript:void(0)" style="color: red;" onclick="deleteService(\'' + o.cn + '\')"><i class="fa fa-trash"></i> 删除</a>';
+    return [editLink, deleteLink].join('<b class="separator-line">|</b>');
+}
+
+function addService() {
+    $('#type').val('NEW');
+    $('#cn').val('');
+    $('#cn').prop('readonly', false);
+    $('#services').val('');
+    $('#edit_service_dialog').mj_show('新增服务');
+}
+
+function editService(cn) {
+    $.mj_ajax('GET', '{{ url_for(".services_page") }}/' + encodeURIComponent(cn), {}, function(result) {
+        result = JSON.parse(result);
+        if (result === null) {
+            $.mj_alert('服务不存在！', $.mj_close, 'error');
+            return;
+        }
+        $('#type').val('EDIT');
+        $('#cn').val(cn);
+        $('#cn').prop('readonly', true);
+        $('#services').val(result.authorizedService.join('\n'));
+        $('#edit_service_dialog').mj_show('编辑服务');
+    });
+}
+
+function saveService() {
+    if ($.isBlank($('#cn').val())) {
+        checkInput($('#cn'), $('#cnlabel'));
+        $.mj_alert('名称不能为空！', $.mj_close, 'error');
+        return;
+    }
+    $('#editServiceForm').mj_submit('POST', '{{ url_for(".services_save") }}', function(result) {
+        if (result === 'success') {
+            $.mj_alert('保存成功！', function() {
+                $.mj_close();
+                $('#edit_service_dialog').mj_hide();
+                $('#services_table').mj_query();
+            }, 'success');
+        } else {
+            $.mj_alert('保存失败！', $.mj_close, 'error');
+        }
+    });
+}
+
+function deleteService(cn) {
+    $.mj_confirm("确定删除服务 " + cn + "？", function() {
+        $.mj_ajax('DELETE', "{{ url_for('.services_page') }}/" + encodeURIComponent(cn), {}, function(result) {
+            if (result === 'success') {
+                $.mj_close();
+                $("#services_table").mj_query();
+            } else {
+                $.mj_alert(result, null, 'error');
+            }
+        });
+    });
+}
+
+function checkInput(checkObj, showObj) {
+    if ($.isBlank($(checkObj).val())) {
+        $(showObj).show();
+    } else {
+        $(showObj).hide();
+    }
+}
+
+$(document).ready(function() {
+    $('#services_table').mj_preloadTable();
+    $('#edit_service_dialog').mj_preloadDialog();
+    $('#services_table').mj_query();
+});
+</script>
+{% endblock %}
+{% block content %}
+{{ table.build('services_table', allow_paging='false') }}
+<div id="services_table_heading">
+    <button type="button" class="btn btn-primary" onclick="addService()"><i class="fa fa-plus"></i> 新增服务</button>
+</div>
+
+{{ dialog.build('edit_service_dialog', '编辑服务', '600px') }}
+<div id="edit_service_dialog_body">
+    <form id="editServiceForm">
+        <input type="hidden" id="type" name="type" value="">
+        <div class="form-group">
+            <label for="cn">名称(cn) <em>*</em></label>
+            <input type="text" class="form-control has-error" id="cn" name="cn" maxlength="80" onblur="checkInput(this,$('#cnlabel'))">
+            <span id="cnlabel" class="label label-danger" style="display: none;">Cannot be blank<br/></span><br/>
+        </div>
+        <div class="form-group">
+            <label for="services">服务 <em>*</em> <span style="font-style: italic">(多个服务以换行分隔)</span></label>
+            <textarea class="form-control" id="services" name="services" rows="15"></textarea>
+        </div>
+    </form>
+</div>
+<div id="edit_service_dialog_footer">
+    <button type="button" class="btn btn-primary" onclick="saveService()">Save</button>
+    <button type="button" class="btn btn-default" onclick="$('#edit_service_dialog').mj_hide();">Cancel</button>
+</div>
+{% endblock %}

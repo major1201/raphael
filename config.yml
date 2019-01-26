@@ -1,0 +1,43 @@
+---
+system:                    # system related config
+  project_name: raphael    # should NOT be changed
+
+logging:                   # logging parameters
+  stdout:                  # stdout logging
+    enable: true           # enable stdout or not
+    format:                # logging format; default: '[%(asctime)s %(levelname)s %(name)s] %(message)s'
+    level:                 # logging level; default: 0; 0: NOTSET, 10: DEBUG, 20: INFO, 30: WARNING, 40: ERROR, 50: FATAL/CRITICAL
+  file:                    # file logging
+    enable: false          # enable log to file or not
+    level:
+    path:                  # file path
+    rotating:              # log file rotating
+      enable: true         # enable log file rotating or not
+      when: MIDNIGHT
+      backup_count: 60
+  loggers:                 # other logger to overwrite
+    - name: requests
+      level: 100
+    - name: werkzeug
+      level: 100
+
+dao:                       # db connection
+  url: mysql+mysqldb://raphael:raphael@127.0.0.1/raphael?charset=utf8 # db connection url
+  pool_size: 20            # db pool size; default: 20
+  max_overflow: 0          # db max overflow; default: 0
+  pool_recycle: 5          # db pool recycle; default: 5
+  pool_timeout: 3600       # db pool timeout;
+
+cache:                     # db cache
+  memcached:               # memcached config
+    enabled: false         # enable memcached or not
+    server_list:           # memcached server list
+      - 127.0.0.1:11211
+
+web:                       # web config
+  listen_addr: 0.0.0.0     # listen address
+  port: 8000               # listen port
+  debug: false             # debug or not
+  threaded: true           # threaded or not
+  cookie_secret: b5b0215e4ed24ced8a0a2d3779bd81f2 # cookie secret
+...

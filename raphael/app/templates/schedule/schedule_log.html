@@ -1,0 +1,52 @@
+{% extends 'include/base.html' %}
+{% block title %}Schedule Log{% endblock %}
+{% block head %}{{ super() }}
+<script>
+var current_tab = 1;
+var scheduleLogTable_prop = {
+    "url": "/schedule/log/{{ scheduleid }}/table",
+    "width": "100%",
+    "order_by": "executiontime desc",
+    "page_size": 15,
+    "query_form": "schedule_log_query_form"
+};
+var scheduleLogTable_col = [
+    {title: "", prop: "status", js: "colStatus", width: "30px", allow_sort: true},
+    {title: "Execution Time", prop: "executiontime", width: "170px", allow_sort: true, is_utc: true},
+    {title: "Return Val", prop: "retval", width: "auto", align: "left", allow_sort: true, allow_tag: true},
+    {title: "Exception", prop: "exception", width: "auto", align: "left", allow_sort: true, allow_tag: true}
+];
+
+function colStatus(o) {
+    switch (o.status) {
+        case 1: return '<i class="fa fa-check" style="color: green;" title="Executed"></i>';
+        case 2: return '<i class="fa fa-times" style="color: red;" title="Error"></i>';
+        case 3: return '<i class="fa fa-warning" style="color: orange;" title="Missed"></i>';
+        case 4: return '<i class="fa fa-bomb" style="color: red;" title="Hit max instance"></i>';
+        default: return '';
+    }
+}
+
+$(document).ready(function() {
+    $("#scheduleLogTable").mj_preloadTable();
+    $("#scheduleLogTable").mj_query();
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<form id="schedule_log_query_form" class="form-inline">
+    <select title="Status" class="form-control" id="status" name="status">
+        <option value="">--Status--</option>
+        <option value="1">Executed</option>
+        <option value="2">Error</option>
+        <option value="3">Missed</option>
+        <option value="4">Hit max instance</option>
+    </select>
+    <button type="button" class="btn btn-primary" onclick="$('#scheduleLogTable').mj_query();"><span class="glyphicon glyphicon-search"></span> Search</button>
+</form><br>
+{{ table.build('scheduleLogTable') }}
+<div id="scheduleLogTable_heading">
+    <h4>Schedule ID: {{ scheduleid }}</h4>
+</div>
+{% endblock %}

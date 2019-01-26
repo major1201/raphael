@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="/static/css/bootstrap.min.css"/>
+<link rel="stylesheet" href="/static/jstree/themes/default/style.min.css"/>
+<script src="/static/js/jquery.min.js"></script>
+<script src="/static/js/bootstrap.min.js"></script>
+<script src="/static/jstree/jstree.min.js"></script>
+<title></title>
+<script>
+$(document).ready(function () {
+    $('#_tree').on("changed.jstree", function (e, data) {
+        var node = data.instance.get_selected(true)[0];
+        var url = node.a_attr.href;
+        var target = node.a_attr.target;
+        if (url && target) {
+            parent.document.getElementById(target).src = url;
+        }
+    }).jstree({
+        'core': {'data': [
+            {text: "Basic", state: {opened: true}, children: [
+                {text: "Typesetting", icon: "glyphicon glyphicon-link", a_attr: {href: "basic/typesetting.html", target: "targetFrame"}},
+                {text: "Table", icon: "glyphicon glyphicon-link", a_attr: {href: "basic/table.html", target: "targetFrame"}},
+                {text: "Button", icon: "glyphicon glyphicon-link", a_attr: {href: "basic/button.html", target: "targetFrame"}},
+                {text: "Form", icon: "glyphicon glyphicon-link", a_attr: {href: "basic/form.html", target: "targetFrame"}},
+                {text: "Icon", icon: "glyphicon glyphicon-link", a_attr: {href: "basic/icon.html", target: "targetFrame"}},
+                {text: "Tab", icon: "glyphicon glyphicon-link", a_attr: {href: "basic/tab.html", target: "targetFrame"}},
+                {text: "Nav bar", icon: "glyphicon glyphicon-link", a_attr: {href: "basic/navbar.html", target: "targetFrame"}},
+                {text: "Tools", icon: "glyphicon glyphicon-link", a_attr: {href: "basic/tools.html", target: "targetFrame"}},
+                {text: "Dialog", icon: "glyphicon glyphicon-link", a_attr: {href: "basic/dialog.html", target: "targetFrame"}},
+                {text: "Date time", icon: "glyphicon glyphicon-link", a_attr: {href: "basic/datepicker.html", target: "targetFrame"}}
+            ]},
+            {text: "Template", state: {opened: true}, children: [
+                {text: "Logon", icon: "glyphicon glyphicon-link", a_attr: {href: "template/logon.html", target: "targetFrame"}}
+            ]}
+        ]}
+    });
+});
+</script>
+</head>
+<body style="padding: 10px 0 0 10px;">
+<div id="_tree"></div>
+</body>
+</html>
