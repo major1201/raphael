@@ -22,8 +22,8 @@ pyotp==2.2.6
 PyQRCode==1.2.1
 python-memcached==1.59
 pytz==2018.5
-PyYAML==3.13
-requests==2.19.1
+PyYAML>=4.2b1
+requests==2.21.0
 six==1.11.0
 SQLAlchemy==1.2.10
 tzlocal==1.5.1
