@@ -44,7 +44,7 @@ setup(
         'six==1.11.0',
         'SQLAlchemy==1.2.10',
         'tzlocal==1.5.1',
-        'urllib3==1.23',
+        'urllib3==1.24.2',
         'uWSGI==2.0.17.1',
         'Werkzeug==0.15.3',
     ],
