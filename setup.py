@@ -42,7 +42,7 @@ setup(
         'PyYAML>=4.2b1',
         'requests==2.21.0',
         'six==1.11.0',
-        'SQLAlchemy==1.2.10',
+        'SQLAlchemy==1.3.0',
         'tzlocal==1.5.1',
         'urllib3==1.24.2',
         'uWSGI==2.0.17.1',
