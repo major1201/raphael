@@ -46,7 +46,7 @@ setup(
         'tzlocal==1.5.1',
         'urllib3==1.24.2',
         'uWSGI==2.0.17.1',
-        'Werkzeug==0.15.3',
+        'Werkzeug==0.15.5',
     ],
     extras_require={}
 )
