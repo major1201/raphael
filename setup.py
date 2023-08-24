@@ -45,7 +45,7 @@ setup(
         'SQLAlchemy==1.3.0',
         'tzlocal==1.5.1',
         'urllib3==1.26.5',
-        'uWSGI==2.0.17.1',
+        'uWSGI==2.0.22',
         'Werkzeug==2.2.3',
     ],
     extras_require={}
