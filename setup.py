@@ -34,7 +34,7 @@ setup(
         'pyasn1==0.4.4',
         'pycparser==2.18',
         'pycrypto==2.6.1',
-        'PyMySQL==0.9.2',
+        'PyMySQL==1.1.1',
         'pyotp==2.2.6',
         'PyQRCode==1.2.1',
         'python-memcached==1.59',
