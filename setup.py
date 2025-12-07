@@ -40,7 +40,7 @@ setup(
         'python-memcached==1.59',
         'pytz==2018.5',
         'PyYAML>=4.2b1',
-        'requests==2.32.0',
+        'requests==2.32.4',
         'six==1.11.0',
         'SQLAlchemy==1.3.0',
         'tzlocal==1.5.1',
