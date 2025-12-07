@@ -27,7 +27,7 @@ setup(
         'geoip2==2.9.0',
         'idna==3.7',
         'itsdangerous==0.24',
-        'Jinja2==3.1.4',
+        'Jinja2==3.1.6',
         'ldap3==2.5.1',
         'MarkupSafe==1.0',
         'maxminddb==1.4.1',
