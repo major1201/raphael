@@ -22,7 +22,7 @@ setup(
         'chardet==3.0.4',
         'click==6.7',
         'cryptography==46.0.5',
-        'Flask==2.3.2',
+        'Flask==3.1.3',
         'future==0.18.3',
         'geoip2==2.9.0',
         'idna==3.7',
