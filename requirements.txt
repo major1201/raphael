@@ -14,7 +14,7 @@ Jinja2==3.1.6
 ldap3==2.5.1
 MarkupSafe==1.0
 maxminddb==1.4.1
-pyasn1==0.4.4
+pyasn1==0.6.3
 pycparser==2.18
 pycrypto==2.6.1
 PyMySQL==1.1.1
