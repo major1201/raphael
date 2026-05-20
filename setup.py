@@ -25,7 +25,7 @@ setup(
         'Flask==2.3.2',
         'future==0.18.3',
         'geoip2==2.9.0',
-        'idna==3.7',
+        'idna==3.15',
         'itsdangerous==0.24',
         'Jinja2==3.1.6',
         'ldap3==2.5.1',
