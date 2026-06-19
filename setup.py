@@ -21,7 +21,7 @@ setup(
         'cffi==1.11.5',
         'chardet==3.0.4',
         'click==6.7',
-        'cryptography==46.0.5',
+        'cryptography==48.0.1',
         'Flask==3.1.3',
         'future==0.18.3',
         'geoip2==2.9.0',
