@@ -31,7 +31,7 @@ setup(
         'ldap3==2.5.1',
         'MarkupSafe==1.0',
         'maxminddb==1.4.1',
-        'pyasn1==0.6.3',
+        'pyasn1==0.6.4',
         'pycparser==2.18',
         'pycrypto==2.6.1',
         'PyMySQL==1.1.1',
