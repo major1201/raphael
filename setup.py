@@ -17,7 +17,7 @@ setup(
     install_requires=[
         'APScheduler==3.5.1',
         'asn1crypto==0.24.0',
-        'certifi==2024.7.4',
+        'certifi==2026.10.19',
         'cffi==1.11.5',
         'chardet==3.0.4',
         'click==6.7',
